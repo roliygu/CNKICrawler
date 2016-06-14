@@ -16,6 +16,7 @@ import uuid
 
 import crawler.crawler as crawler
 import crawler.cnki.constants as constants
+import mongo_utils.mongo_utils as mongo_utils
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -497,9 +498,22 @@ def clean_raw_json_multiprocessing(process_num):
 
 
 def main(arv):
-    process_num = multiprocessing.cpu_count() * 8
     start = time.time()
-    clean_raw_json_multiprocessing(process_num)
+    data_file = open("json/data", 'r')
+    lines = data_file.readlines()
+    json_data = [json.loads(i) for i in lines]
+    for i in json_data:
+        i['other']['reference'] = int(i['other']['reference'])
+    d = {}
+    for i in json_data:
+        if i['name']+i['title'] in d.keys():
+            continue
+        else:
+            d[i['name']+i['title']] = i
+    res = []
+    for key in d.keys():
+        res.append(d[key])
+    mongo_utils.insert_many(res)
     end = time.time()
     print(end-start)
     return
