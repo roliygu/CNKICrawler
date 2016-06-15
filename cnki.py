@@ -504,16 +504,20 @@ def main(arv):
     json_data = [json.loads(i) for i in lines]
     for i in json_data:
         i['other']['reference'] = int(i['other']['reference'])
-    d = {}
-    for i in json_data:
-        if i['name']+i['title'] in d.keys():
-            continue
-        else:
-            d[i['name']+i['title']] = i
-    res = []
-    for key in d.keys():
-        res.append(d[key])
-    mongo_utils.insert_many(res)
+    end1 = time.time()
+    print("to int: " + str(end1-start))
+    json_data.sort(cmp=lambda x, y: cmp(x['name']+x['title'], y['name']+y['title']))
+    end2 = time.time()
+    print("sort: " + str(end2-end1))
+    for i in range(1, len(json_data)):
+        this_json_data = json_data[i]
+        last_json_data = json_data[i-1]
+        if (this_json_data['name']+this_json_data['title']) == (last_json_data['name'] + last_json_data['title']):
+            del json_data[i]
+    end3 = time.time()
+    print("del: "+str(end3-end2))
+    print("json_data len: " + str(len(json_data)))
+    mongo_utils.insert_many(json_data)
     end = time.time()
     print(end-start)
     return
