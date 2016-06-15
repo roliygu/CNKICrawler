@@ -509,11 +509,15 @@ def main(arv):
     json_data.sort(cmp=lambda x, y: cmp(x['name']+x['title'], y['name']+y['title']))
     end2 = time.time()
     print("sort: " + str(end2-end1))
-    for i in range(1, len(json_data)):
+
+    i = 1
+    while i < len(json_data):
         this_json_data = json_data[i]
         last_json_data = json_data[i-1]
         if (this_json_data['name']+this_json_data['title']) == (last_json_data['name'] + last_json_data['title']):
             del json_data[i]
+        else:
+            i += 1
     end3 = time.time()
     print("del: "+str(end3-end2))
     print("json_data len: " + str(len(json_data)))
