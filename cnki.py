@@ -2,9 +2,7 @@
 # coding=utf-8
 
 import sys
-import requests
 import math
-from bs4 import BeautifulSoup
 import time
 import datetime
 import socket
@@ -14,9 +12,12 @@ import json
 import multiprocessing
 import uuid
 
+import requests
+from bs4 import BeautifulSoup
+
 import crawler.crawler as crawler
 import crawler.cnki.constants as constants
-import mongo_utils.mongo_utils as mongo_utils
+from feature_extractor import mongo_utils as mongo_utils
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -461,9 +462,6 @@ def product_paper_detail_multiprocessing(package, process_num):
     # 每个进程需要做的事: 拿到给定的uuid创建文件,将得到的数据写入文件,关闭文件
     # 每个进程都完成之后,主进程将所有文件aggregate到一个文件中,清空临时目录
 
-    def start_process():
-        print("starting %s\n" % multiprocessing.current_process().name)
-
     # 清除tmp/data和tmp/log下所有文件
     dir_path = 'tmp/%s/'
     file_names = os.listdir('tmp/data/')
@@ -471,15 +469,23 @@ def product_paper_detail_multiprocessing(package, process_num):
         os.remove((dir_path+file_name) % 'log')
         os.remove((dir_path+file_name) % 'data')
 
-    step = 50
-    groups = [lines[i:i+step] for i in range(0, len(lines), step)]
-    pool = multiprocessing.Pool(processes=process_num, initializer=start_process)
-    pool.map(do_calculation, groups)
-    pool.close()
-    pool.join()
+    multiprocessing_groups(lines, process_num)
 
     aggregate_all_file_in_dir("tmp/data/", "tmp/", "data_aggregate")
     aggregate_all_file_in_dir("tmp/log/", "tmp/", "log_aggregate")
+
+
+def multiprocessing_groups(lines, process_num):
+    def start_process():
+        print("starting %s\n" % multiprocessing.current_process().name)
+
+    step = 50
+    groups = [lines[i:i + step] for i in range(0, len(lines), step)]
+    pool = multiprocessing.Pool(processes=process_num, initializer=start_process)
+    res = pool.map(do_calculation, groups)
+    pool.close()
+    pool.join()
+    return res
 
 
 def clean_raw_json_multiprocessing(process_num):
