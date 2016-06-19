@@ -123,7 +123,7 @@ def parse_items_and_insert(array):
 
 
 def main(argv):
-    cursor = mongo_utils.get_1000()
+    cursor = mongo_utils.get_all()
     result = cursor_to_list(cursor)
     multiprocessing_groups(result, 8, parse_items_and_insert, 250)
 
