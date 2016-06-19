@@ -15,6 +15,11 @@ def get_db():
     return db
 
 
+def create_new_client_and_db():
+    client = pymongo.MongoClient("192.168.31.230", 27017)
+    return client.cnki
+
+
 def insert(data, collection=db.doctor):
     return collection.insert_one(data).inserted_id
 

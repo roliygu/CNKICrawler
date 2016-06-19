@@ -116,16 +116,16 @@ def multiprocessing_groups(items, process_num, do_func, step):
     return res
 
 
-def parse_items(array):
-    return [parse_item(i) for i in array]
+def parse_items_and_insert(array):
+    db = mongo_utils.create_new_client_and_db()
+    data = [parse_item(i) for i in array]
+    mongo_utils.insert_many(data, collection=db.doctor_seq)
 
 
 def main(argv):
     cursor = mongo_utils.get_1000()
     result = cursor_to_list(cursor)
-    result2 = multiprocessing_groups(result, 4, parse_items, 250)
-    result3 = [y for x in result2 for y in x]
-    mongo_utils.insert_many(result3, collection=db.doctor_seq)
+    multiprocessing_groups(result, 8, parse_items_and_insert, 250)
 
 
 if __name__ == '__main__':
