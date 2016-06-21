@@ -331,7 +331,7 @@ def get_paper_url_detail_doc(uri):
     :param uri: str: part of paper detail uri
     :return: doc object in soup and html
     """
-    handle = crawler.retry_urlopen(constants.www_cnki_prefix + uri, 5, time_out=3)
+    handle = crawler.retry_urlopen(constants.www_cnki_prefix + uri, 10, time_out=2.5)
     html = handle.read()
     return BeautifulSoup(html.decode("utf8"), "html.parser"), html
 
@@ -544,9 +544,11 @@ def build_paper_url(parent_tag_tag_tuple):
 
 
 def main(arv):
-    paper_url = mongo_utils.get_url_by_tag("B")
-    print(len(paper_url['urls']))
-    build_and_insert_paper_detail_object_multiprocessing(paper_url['urls'], 24)
+    package_list = ["C", "D", "E", "F", "G", "H", "I", "J"]
+    for package in package_list:
+        paper_url = mongo_utils.get_url_by_tag(package)
+        print package, len(paper_url['urls'])
+        build_and_insert_paper_detail_object_multiprocessing(paper_url['urls'], 32)
     # url ="/KCMS/detail/detail.aspx?QueryID=2&CurRec=413&recid=&FileName=2000005045.nh&DbName=CDFD9908&DbCode=CDFD&pr="
     # build_and_insert_paper_detail_object(url)
     # print('hello')
