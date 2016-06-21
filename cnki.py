@@ -553,7 +553,7 @@ def clean_raw_json_multiprocessing(process_num):
                 w_file.write(line+"\n")
 
 
-def build_paper_url_multiprocessing(package, process_num):
+def build_paper_url_and_insert_multiprocessing(package, process_num):
     tag_a_list = constants.all_tag_map[package]
     tuple_list = [(package, tag) for tag in tag_a_list]
     pool = multiprocessing.Pool(processes=process_num)
@@ -573,6 +573,12 @@ def check_db(package):
                 continue
             if num != len(query_data[u'urls']):
                 print(num, len(query_data[u'urls']))
+
+
+def build_paper_url_and_insert_all_multiprocessing():
+    process_num = multiprocessing.cpu_count() * 2
+    for package in constants.all_package:
+        build_paper_url_and_insert_multiprocessing(package, process_num)
 
 
 def main(arv):

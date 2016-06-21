@@ -8,7 +8,7 @@ import pymongo
 
 __author__ = 'roliy'
 
-
+# if used for multiprocessing, connect should be False
 client = pymongo.MongoClient("192.168.31.230", 27017, connect=False)
 
 db = client.cnki

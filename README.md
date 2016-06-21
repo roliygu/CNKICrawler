@@ -26,3 +26,16 @@
 email：279581355@qq.com、roliygu@gmail.com
 额，值得一提的是，中间数据并没有用git管理起来，所以直接跑cnki.py是跑不起来的，如果想自己跑一下的话，可以等我再完善一下。
 
+### 1. Dependency
+
+If you want run this program, you need install some other python package. Including requests, BeautifulSoup4, etc...
+There should be the mongoDB on your pc, because the latest program's data storage base on mongoDB.
+To install python package, you can use "pip install package_name" command (require pip had been installed in your pc successfully).
+And make sure your mongoDB can be connected, such as ip, port, username and password, etc, are right. Mongo's connect options all in the mongo_utils/mongo_utils.py
+
+### 2. DataStruct
+
+#### 2.1 PaperURL
+
+The PaperURL model is crawler/cnki_class.PaperURL. It represents the url list of paper with different tag.
+
