@@ -7,3 +7,7 @@ data_back/
 json/
 nohup.out
 *.pyc
+cnki.py.lprof
+collection_utils/collection_utils.py
+doc/picture/
+feature_extractor/
