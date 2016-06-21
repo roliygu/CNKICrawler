@@ -184,54 +184,6 @@ def get_first_page(tag):
     return ctl, new_header, page_html
 
 
-def build_paper_url_and_insert(parent_tag_tag_tuple):
-    paper_url = None
-    try:
-        paper_url = build_paper_url(parent_tag_tag_tuple)
-    except AttributeError, e:
-        print(parent_tag_tag_tuple[1], e.message)
-    if paper_url:
-        mongo_utils.insert_url(paper_url.to_dic())
-
-
-def build_paper_url(parent_tag_tag_tuple):
-    """
-
-    :param parent_tag_tag_tuple: tuple
-    :return: PaperURL Object or None
-    """
-    parent_tag, tag = parent_tag_tag_tuple
-
-    result = cnki_class.PaperURL([], tag, parent_tag)
-
-    ctl, new_header, first_page_html = get_first_page(tag)
-    item_num = find_item_num(first_page_html)
-    page_num = calculate_page_num(item_num)
-
-    if page_num == 1:
-        paper_list = parse_url_list(first_page_html)
-        result.urls = paper_list
-    else:
-        query_id = parse_query_id(first_page_html)
-        for index in range(page_num):
-            current_page = index + 1
-            ith_page = session.get(constants.ith_page_uri,
-                               params=build_ith_page_query(ctl, current_page, query_id),
-                               headers=new_header).text
-            if is_check_code_page(ith_page):
-                ctl, new_header, first_page_html = get_first_page(tag)
-                ith_page = session.get(constants.ith_page_uri,
-                                       params=build_ith_page_query(ctl, current_page, query_id),
-                                       headers=new_header).text
-            paper_list = parse_url_list(ith_page)
-            result.urls += paper_list
-    if len(result.urls) == 0:
-        return None
-    collection_utils.unique(result.urls, lambda x, y: cmp(x, y))
-    result.urls = [url.replace('kns', 'KCMS') for url in result.urls]
-    return result
-
-
 def generate_paper_list(package, tag, start=0):
     """
     生成各类下uri列表
@@ -298,56 +250,7 @@ def generate_paper_list_all_tag(package, tag_list):
             continue
 
 
-def make_str(result, uri):
-    def replace_invalid(row_str):
-        return row_str.replace("\"", "'").replace("\n", "")\
-            .replace("\r", "").replace("\\", " ").replace("                ", "")
-    res = {
-        'name': replace_invalid(result[3]['name']),
-        'teacher': replace_invalid(result[3]['teacher']),
-        'author_other': replace_invalid(result[3]['other']),
-        'school': replace_invalid(result[3]['school']),
-        'keywords': replace_invalid(result[1]),
-        'title': replace_invalid(result[0]),
-        'abstract': replace_invalid(result[2]),
-        'other': replace_invalid(result[4]),
-        'uri': uri
-    }
-    res_json = "{"
-    for key in res.keys():
-        res_json += "\"%s\": \"%s\", " % (key, res[key])
-    res_json += "}"
-    return res_json
-
-
-# 分类号,引用数,下载数
-def find_other(soup):
-    return "**".join(li.get_text().strip() for li in soup.find(attrs={"class": u"summary01"}).find_all('li'))
-
-
-def find_keywords(soup):
-    return "**".join(a.get_text().strip() for a in soup.find(id='ChDivKeyWord').find_all('a'))
-
-
-def find_author_info(soup):
-    def has_class_summary(tag):
-        return tag.has_attr('class') and u'summary' in tag.get('class')
-    p_list = soup.find(has_class_summary).find_all('p')
-    res = {
-        'name': p_list[0].find('a').get_text().strip(),
-        'teacher': "**".join([a.get_text().strip() for a in p_list[1].find_all('a')]),
-        "school": p_list[2].find('a').get_text().strip(),
-        'other': "**".join(i.strip() for i in p_list[2].get_text().split("\r\n"))
-    }
-    return res
-
-
-def find_abstract(soup):
-    return soup.find(id='ChDivSummary').get_text()
-
-
-def find_title(soup):
-    return soup.find(id='chTitle').get_text()
+############### build paper detail ###############
 
 
 def find_school(soup):
@@ -358,48 +261,117 @@ def find_school(soup):
     return soup.find_all(has_class_but_no_id)[0].get_text()
 
 
-def generate_paper_detail(uri_field):
+def find_title(soup):
+    title = soup.find(id='chTitle')
+    if not title:
+        title = soup.find(id='enTitle')
+    title = title.get_text()
+    title = title.replace("\r\n", "").replace("                ", "")
+    return title
+
+
+def find_keywords(soup):
+    return [a.get_text().strip() for a in soup.find(id='ChDivKeyWord').find_all('a')]
+
+
+def find_abstract(soup):
+    abstract = soup.find(id='ChDivSummary')
+    if not abstract:
+        return ""
+    else:
+        return abstract.get_text()
+
+
+def find_author_info(soup):
+    def has_class_summary(tag):
+        return tag.has_attr('class') and u'summary' in tag.get('class')
+    ps = soup.find(has_class_summary).find_all('p')
+    name, teachers, school, other = None, [], None, None
+    for i in ps:
+        html = i.get_text()
+        if u'作者】' in html:
+            name = html.split("】")[1].replace(u"；", "").strip()
+        if u'作者基本信息' in html:
+            school = i.find('a').get_text().strip()
+            other = html.split("\r\n")
+            other = other[len(other)-3:]
+            other = [item.strip().replace(u'，', "") for item in other]
+            other[1] = int(other[1])
+        if u'导师' in html:
+            teachers = [a.get_text().strip().replace(u'；', "") for a in i.find_all('a')]
+    res = {
+        'name': name,
+        'teachers': teachers,
+        'school': school,
+        'other': other
+    }
+    return res
+
+
+def find_paper_info(soup):
+    tmp = [li.get_text().strip() for li in soup.find(attrs={"class": u"summary01"}).find_all('li')]
+    tag, download, reference = [], 0, 0
+    for i in tmp:
+        if u'分类' in i:
+            tag = i.split(u'】')[1].split(u';')
+        if u'下载' in i:
+            download = int(i.split(u'】')[1])
+        if u'被引' in i:
+            reference = int(i.split(u'】')[1])
+    return {
+        'tag': tag,
+        'reference': download,
+        'download': reference
+    }
+
+
+def get_paper_url_detail_doc(uri):
     """
-
-    :param uri_field: str
-    :return: tuple
+    get doc object by uri
+    :param uri: str: part of paper detail uri
+    :return: doc object in soup and html
     """
-    uri_field = uri_field.replace('kns', 'KCMS')
-    page = crawler.retry_urlopen(constants.www_cnki_prefix+uri_field, 4, time_out=2.5)
-    doc = page.read()
-    soup = BeautifulSoup(doc.decode("utf8"), "html.parser")
-    return find_title(soup), find_keywords(soup), find_abstract(soup), find_author_info(soup), find_other(soup)
+    handle = crawler.retry_urlopen(constants.www_cnki_prefix + uri, 5, time_out=3)
+    html = handle.read()
+    return BeautifulSoup(html.decode("utf8"), "html.parser"), html
 
 
-def read_uri_write_paper_detail(package, tag):
-    uri_file = open((constants.page_package_paper_path + tag) % package, 'r')
-    log_file = create_and_open(constants.data_package_log_path % package, tag)
-    paper_file = create_and_open(constants.data_package_paper_path % package, tag)
-    for uri in uri_file.readlines():
-        try:
-            res = generate_paper_detail(uri)
-        except AttributeError:
-            write_log(log_file, uri)
-            continue
-        except urllib2.URLError or socket.timeout:
-            write_log(log_file, "timeout: "+uri)
-            continue
-        json_str = make_str(res, uri.replace("\n", ""))
-        print(json_str)
-        paper_file.write(json_str+",\n")
-    uri_file.close()
-    paper_file.close()
-    log_file.close()
+def parse_doc_to_paper_detail_object(doc, url):
+    author_info = find_author_info(doc)
+    title = find_title(doc)
+    keywords = find_keywords(doc)
+    abstract = find_abstract(doc)
+    paper_info = find_paper_info(doc)
+    return cnki_class.PaperDetail(author_info['name'], title, author_info['school'],
+                                  abstract, url, author_info['other'], paper_info, keywords, author_info['teachers'])
 
 
-def read_uri_write_paper_detail_all_tag_map(tag_map=constants.all_tag_map):
-    for package in tag_map.keys():
-        read_uri_write_paper_detail_all_tag(package, tag_map[package])
+def build_and_insert_paper_detail_object(uri):
+    # doc, html = get_paper_url_detail_doc(uri)
+    # obj = parse_doc_to_paper_detail_object(doc, uri)
+    # mongo_utils.insert_paper_detail(obj.to_dic())
+    try:
+        doc, html = get_paper_url_detail_doc(uri)
+        obj = parse_doc_to_paper_detail_object(doc, uri)
+        mongo_utils.insert_paper_detail(obj.to_dic())
+    except IndexError, e:
+        print e, uri
+    except AttributeError, e:
+        print e, uri
+    except UnicodeEncodeError, e:
+        print e, uri
+    except ValueError, e:
+        print e, uri
 
 
-def read_uri_write_paper_detail_all_tag(package, tag_list):
-    for tag in tag_list:
-        read_uri_write_paper_detail(package, tag)
+def build_and_insert_paper_detail_object_multiprocessing(uris, process_num):
+    pool = multiprocessing.Pool(processes=process_num)
+    pool.map(build_and_insert_paper_detail_object, uris)
+    pool.close()
+    pool.join()
+
+
+############### end build paper detail ###############
 
 
 def process_str(line):
@@ -489,55 +461,6 @@ def aggregate_detail_list(package):
     aggregate_all_file_in_dir(dir_path, dir_path)
 
 
-def do_calculation(batch_lines):
-    file_name = str(uuid.uuid1())
-    log_file = open("tmp/log/"+file_name, 'w')
-    with open("tmp/data/"+file_name, 'w') as tmp_file:
-        for uri in batch_lines:
-            uri = uri[:-1]
-            try:
-                res = generate_paper_detail(uri)
-            except AttributeError, e:
-                log_file.write("[%s] msg: [%s], uri: [%s]\n" % (get_current_date(), e.message, uri))
-                continue
-            except urllib2.URLError, e:
-                log_file.write("[%s] msg: [%s], uri: [%s]\n" % (get_current_date(), e.message, uri))
-                continue
-            except socket.timeout, e:
-                log_file.write("[%s] msg: [%s], uri: [%s]\n" % (get_current_date(), e.message, uri))
-                continue
-            json_str = make_str(res, uri.replace("\n", ""))
-            tmp_file.write(json_str+",\n")
-
-
-def product_paper_detail_multiprocessing(package, process_num):
-    with open((constants.page_package_paper_path+'aggregate') % package, 'r') as data_file:
-        lines = data_file.readlines()
-    # 将lines划分成50个一组的batch,每个进程处理一个batch
-    # 每个进程需要做的事: 拿到给定的uuid创建文件,将得到的数据写入文件,关闭文件
-    # 每个进程都完成之后,主进程将所有文件aggregate到一个文件中,清空临时目录
-
-    def start_process():
-        print("starting %s\n" % multiprocessing.current_process().name)
-
-    # 清除tmp/data和tmp/log下所有文件
-    dir_path = 'tmp/%s/'
-    file_names = os.listdir('tmp/data/')
-    for file_name in file_names:
-        os.remove((dir_path+file_name) % 'log')
-        os.remove((dir_path+file_name) % 'data')
-
-    step = 50
-    groups = [lines[i:i+step] for i in range(0, len(lines), step)]
-    pool = multiprocessing.Pool(processes=process_num, initializer=start_process)
-    pool.map(do_calculation, groups)
-    pool.close()
-    pool.join()
-
-    aggregate_all_file_in_dir("tmp/data/", "tmp/", "data_aggregate")
-    aggregate_all_file_in_dir("tmp/log/", "tmp/", "log_aggregate")
-
-
 def clean_raw_json_multiprocessing(process_num):
     with open("data/raw_json", "r") as json_file:
         lines = json_file.readlines()
@@ -552,6 +475,13 @@ def clean_raw_json_multiprocessing(process_num):
             for line in group:
                 w_file.write(line+"\n")
 
+############### build paper url ###############
+
+def build_paper_url_and_insert_all_multiprocessing():
+    process_num = multiprocessing.cpu_count() * 2
+    for package in constants.all_package[4:]:
+        build_paper_url_and_insert_multiprocessing(package, process_num)
+
 
 def build_paper_url_and_insert_multiprocessing(package, process_num):
     tag_a_list = constants.all_tag_map[package]
@@ -562,29 +492,64 @@ def build_paper_url_and_insert_multiprocessing(package, process_num):
     pool.join()
 
 
-def check_db(package):
-    tag_list = constants.all_tag_map[package]
-    for tag in tag_list:
-        print(tag)
-        with open("page/%s/paper/%s" % (package, tag), 'r') as r_file:
-            num = len(r_file.readlines())
-            query_data = mongo_utils.get_url_by_tag(tag)
-            if num == 0:
-                continue
-            if num != len(query_data[u'urls']):
-                print(num, len(query_data[u'urls']))
+def build_paper_url_and_insert(parent_tag_tag_tuple):
+    paper_url = None
+    try:
+        paper_url = build_paper_url(parent_tag_tag_tuple)
+    except AttributeError, e:
+        print(parent_tag_tag_tuple[1], e.message)
+    if paper_url:
+        mongo_utils.insert_url(paper_url.to_dic())
 
 
-def build_paper_url_and_insert_all_multiprocessing():
-    process_num = multiprocessing.cpu_count() * 2
-    for package in constants.all_package:
-        build_paper_url_and_insert_multiprocessing(package, process_num)
+def build_paper_url(parent_tag_tag_tuple):
+    """
+
+    :param parent_tag_tag_tuple: tuple
+    :return: PaperURL Object or None
+    """
+    parent_tag, tag = parent_tag_tag_tuple
+
+    result = cnki_class.PaperURL([], tag, parent_tag)
+
+    ctl, new_header, first_page_html = get_first_page(tag)
+    item_num = find_item_num(first_page_html)
+    page_num = calculate_page_num(item_num)
+
+    if page_num == 1:
+        paper_list = parse_url_list(first_page_html)
+        result.urls = paper_list
+    else:
+        query_id = parse_query_id(first_page_html)
+        for index in range(page_num):
+            current_page = index + 1
+            ith_page = session.get(constants.ith_page_uri,
+                               params=build_ith_page_query(ctl, current_page, query_id),
+                               headers=new_header).text
+            if is_check_code_page(ith_page):
+                ctl, new_header, first_page_html = get_first_page(tag)
+                ith_page = session.get(constants.ith_page_uri,
+                                       params=build_ith_page_query(ctl, current_page, query_id),
+                                       headers=new_header).text
+            paper_list = parse_url_list(ith_page)
+            result.urls += paper_list
+    if len(result.urls) == 0:
+        return None
+    collection_utils.unique(result.urls, lambda x, y: cmp(x, y))
+    result.urls = [uri.replace('kns', 'KCMS') for uri in result.urls]
+    return result
+
+
+############### build paper url end ###############
 
 
 def main(arv):
-    res = mongo_utils.get_url_all()
-    print(len(res["urls"]))
-
+    paper_url = mongo_utils.get_url_by_tag("B")
+    print(len(paper_url['urls']))
+    build_and_insert_paper_detail_object_multiprocessing(paper_url['urls'], 24)
+    # url ="/KCMS/detail/detail.aspx?QueryID=2&CurRec=413&recid=&FileName=2000005045.nh&DbName=CDFD9908&DbCode=CDFD&pr="
+    # build_and_insert_paper_detail_object(url)
+    # print('hello')
 
 if __name__ == '__main__':
     main(sys.argv[1:])

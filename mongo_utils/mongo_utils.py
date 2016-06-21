@@ -18,6 +18,10 @@ def insert_url(data):
     return db.paper_url.insert_one(data).inserted_id
 
 
+def insert_paper_detail(data):
+    return db.doctor_new.insert_one(data).inserted_id
+
+
 def get_url_by_tag(tag):
     return db.paper_url.find_one({"tag": tag})
 
