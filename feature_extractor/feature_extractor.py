@@ -26,6 +26,12 @@ def jieba_example():
         print(word, flag)
 
 
+def get_stop_words():
+    with open("./resource/stop_word", 'r') as file:
+        line = file.readline()
+        return line.split(" ,")
+
+
 def cut_with_flag(raw_str, filter_invalid_word_flag=True):
     """
 
@@ -44,14 +50,14 @@ def build_tf(raw_str):
     """
 
     :param raw_str: str
-    :return: list[(str, int)]
+    :return: list[(str, int)], list[str]
     """
     raw_seq_with_flag = cut_with_flag(raw_str)
-    word_frequency_map = collection_utils.count_by(raw_seq_with_flag, lambda x: str(x[0]) + "-" + str(x[1]))
+    word_frequency_map = collection_utils.count_by(raw_seq_with_flag, lambda x: x[0])
     res = []
     for key in word_frequency_map.keys():
         res.append((key, word_frequency_map[key]))
-    return res
+    return res, word_frequency_map.keys()
 
 
 def parse_item(item):
@@ -60,18 +66,20 @@ def parse_item(item):
     :param item: dictionary
     :return: void
     """
-    def add_abstract_seq(t):
-        t['abstract_seq'] = build_tf(t['abstract'])
 
     def add_school_seq(t):
         t['school_seq'] = jieba.lcut_for_search(t['school'])
 
     def add_title_seq(t):
-        t['title_seq'] = cut_with_flag(t['title'])
+        t['title_seq'] = jieba.lcut(t['title'])
 
-    add_abstract_seq(item)
+    def add_abstract_seq_and_tf(t):
+        t['abstract_seq_tf'], t['abstract_seq'] = build_tf(t['abstract'])
+
+    add_abstract_seq_and_tf(item)
     add_school_seq(item)
     add_title_seq(item)
+
     item['_id'] = str(item['_id'])
 
     return item
@@ -83,11 +91,13 @@ def filter_invalid_word(items):
     :param items: list[(str, str)]
     :return:
     """
+    stop_words = get_stop_words()
+
     def filter_char(t):
         return collection_utils.select(t, lambda x: u'x' not in x[1])
 
     def filter_stop_word(t):
-        return collection_utils.select(t, lambda x: u'u' not in x[1])
+        return collection_utils.select(t, lambda x: (u'u' not in x[1]) and (x[0] not in stop_words))
 
     return filter_stop_word(filter_char(items))
 
@@ -116,10 +126,11 @@ def parse_items_and_insert(array):
 def parse_all():
     cursor = mongo_utils.get_all_paper_detail()
     result = cursor_to_list(cursor)
-    multiprocessing_groups(result, 36, parse_items_and_insert, 250)
+    multiprocessing_groups(result, 4, parse_items_and_insert, 250)
 
 
 def main(argv):
+    parse_all()
     return
 
 

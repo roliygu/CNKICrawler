@@ -370,5 +370,8 @@ def reduce_repeat():
 def main(arv):
     feature_extractor.parse_all()
 
+
+    # feature_extractor.main(None)
+
 if __name__ == '__main__':
     main(sys.argv[1:])
