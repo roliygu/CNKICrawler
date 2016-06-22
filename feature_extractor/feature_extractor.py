@@ -113,10 +113,14 @@ def parse_items_and_insert(array):
     mongo_utils.insert_seq_paper_detail(data)
 
 
-def main(argv):
+def parse_all():
     cursor = mongo_utils.get_all_paper_detail()
     result = cursor_to_list(cursor)
     multiprocessing_groups(result, 36, parse_items_and_insert, 250)
+
+
+def main(argv):
+    return
 
 
 if __name__ == '__main__':

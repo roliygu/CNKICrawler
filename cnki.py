@@ -15,6 +15,7 @@ import crawler.cnki.constants as constants
 import crawler.cnki.cnki_class as cnki_class
 import collection_utils.collection_utils as collection_utils
 import mongo_utils.mongo_utils as mongo_utils
+import feature_extractor.feature_extractor as feature_extractor
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -368,7 +369,7 @@ def reduce_repeat():
 ############### end other process ###############
 
 def main(arv):
-    reduce_repeat()
+    feature_extractor.parse_all()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
