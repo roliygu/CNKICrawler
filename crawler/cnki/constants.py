@@ -30,6 +30,8 @@ all_tag_map = {
     'C': tag_c, 'D': tag_d, 'G': tag_g, 'H': tag_h, 'J': tag_j
 }
 
+all_package = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+
 www_cnki_prefix = "http://www.cnki.net"
 
 epub_cnki_prefix = "http://epub.cnki.net/kns"

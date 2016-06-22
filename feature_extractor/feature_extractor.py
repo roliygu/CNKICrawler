@@ -1,24 +1,19 @@
 #! usr/bin/python
 # coding=utf-8
 import sys
-import time
 
-import mongo_utils
-import collection_utils
 import jieba
 import jieba.analyse
 import jieba.posseg as pseg
-import json
 import multiprocessing
+
+import mongo_utils.mongo_utils as mongo_utils
+import collection_utils.collection_utils as collection_utils
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 __author__ = 'roliy'
-
-
-db = mongo_utils.get_db()
-
 
 # jieba example
 def jieba_example():
@@ -98,10 +93,7 @@ def filter_invalid_word(items):
 
 
 def cursor_to_list(cursor):
-    res = []
-    for i in cursor:
-        res.append(i)
-    return res
+    return [i for i in cursor]
 
 
 def multiprocessing_groups(items, process_num, do_func, step):
@@ -117,15 +109,14 @@ def multiprocessing_groups(items, process_num, do_func, step):
 
 
 def parse_items_and_insert(array):
-    db = mongo_utils.create_new_client_and_db()
     data = [parse_item(i) for i in array]
-    mongo_utils.insert_many(data, collection=db.doctor_seq)
+    mongo_utils.insert_seq_paper_detail(data)
 
 
 def main(argv):
-    cursor = mongo_utils.get_all()
+    cursor = mongo_utils.get_all_paper_detail()
     result = cursor_to_list(cursor)
-    multiprocessing_groups(result, 8, parse_items_and_insert, 250)
+    multiprocessing_groups(result, 36, parse_items_and_insert, 250)
 
 
 if __name__ == '__main__':

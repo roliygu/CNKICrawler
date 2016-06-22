@@ -7,3 +7,5 @@ data_back/
 json/
 nohup.out
 *.pyc
+cnki.py.lprof
+doc/picture/
