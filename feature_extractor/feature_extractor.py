@@ -71,7 +71,7 @@ def parse_item(item):
         t['school_seq'] = jieba.lcut_for_search(t['school'])
 
     def add_title_seq(t):
-        t['title_seq'] = jieba.lcut(t['title'])
+        t['title_seq'] = build_tf(t['title'])[1]
 
     def add_abstract_seq_and_tf(t):
         t['abstract_seq_tf'], t['abstract_seq'] = build_tf(t['abstract'])
