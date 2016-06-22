@@ -4,7 +4,6 @@ import sys
 
 __author__ = 'roliy'
 
-print("feature_extractor init")
 
 def main(argv):
     return
