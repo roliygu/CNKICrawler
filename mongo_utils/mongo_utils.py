@@ -22,6 +22,10 @@ def insert_paper_detail(data):
     return db.doctor_new.insert_one(data).inserted_id
 
 
+def insert_reduce_paper_detail(data):
+    return db.reduce_doctor.insert_many(data)
+
+
 def get_url_by_tag(tag):
     return db.paper_url.find_one({"tag": tag})
 
@@ -41,7 +45,7 @@ def get_url_by_parent_tag(parent_tag):
         return first_request
 
 
-def get_url_all():
+def get_all_url():
     """
     too large to insert to db...so, can't use insert after query to cache it...
     :return:
@@ -53,6 +57,10 @@ def get_url_all():
     result = parent_tag_url_object.to_dic()
     collection_utils.unique(result['urls'], lambda x, y: cmp(x, y))
     return result
+
+
+def get_all_paper_detail():
+    return db.doctor_new.find()
 
 
 def insert_many(data):
