@@ -68,5 +68,8 @@ def get_all_url():
 
 
 def get_all_paper_detail():
-    return db.doctor.find(limit=1000)
+    return db.doctor.find(limit=5000)
 
+
+def get_all_seq_doctor():
+    return db.seq_doctor.find()

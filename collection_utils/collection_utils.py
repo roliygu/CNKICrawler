@@ -1,6 +1,7 @@
 #! usr/bin/python
 # coding=utf-8
 import sys
+import bisect
 import random
 
 __author__ = 'roliy'
@@ -80,6 +81,13 @@ def select(array, predicate):
         if predicate(i):
             res.append(i)
     return res
+
+
+def binary_search(a, x):
+    i = bisect.bisect_left(a, x)
+    if i != len(a) and a[i] == x:
+        return i
+    return -1
 
 
 def main(argv):

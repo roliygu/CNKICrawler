@@ -368,7 +368,7 @@ def reduce_repeat():
 ############### end other process ###############
 
 def main(arv):
-    feature_extractor.jieba_example()
+    feature_extractor.parse_all()
 
 
 if __name__ == '__main__':

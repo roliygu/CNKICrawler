@@ -7,6 +7,7 @@ import jieba
 import jieba.analyse
 import jieba.posseg as pseg
 import multiprocessing
+# import line_profiler
 
 import mongo_utils.mongo_utils as mongo_utils
 import collection_utils.collection_utils as collection_utils
@@ -137,8 +138,25 @@ def parse_all():
     print("time: " + str((end - start)*1.0/60))
 
 
+def cal_IDF(all_seq_data):
+    """
+
+    :return:
+    """
+    all_words = []
+    for item in all_seq_data:
+        all_words.extend(item)
+    collection_utils.unique(all_words, lambda x, y: cmp(x, y))
+    count = [0 for i in range(len(all_words))]
+    for row in all_seq_data:
+        for word in row:
+            index = collection_utils.binary_search(all_words, word)
+            if index != -1:
+                count[index] += 1
+    return all_words, count
+
+
 def main(argv):
-    parse_all()
     return
 
 
