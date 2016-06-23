@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import time
 import datetime
 import multiprocessing
+import array
 
 import crawler.crawler as crawler
 import crawler.cnki.constants as constants
@@ -367,8 +368,12 @@ def reduce_repeat():
 
 ############### end other process ###############
 
+@profile
 def main(arv):
-    feature_extractor.jieba_example()
+    data = mongo_utils.get_all_seq_doctor()
+    data = [i for i in data]
+    feature_extractor.feature_extractor_tf_idf(data)
+    print("hello")
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ import jieba
 import jieba.analyse
 import jieba.posseg as pseg
 import multiprocessing
+import line_profiler
 
 import mongo_utils.mongo_utils as mongo_utils
 import collection_utils.collection_utils as collection_utils
@@ -137,8 +138,47 @@ def parse_all():
     print("time: " + str((end - start)*1.0/60))
 
 
+# @profile
+def cal_IDF(all_seq_data):
+    """
+
+    :return:
+    """
+    all_words = []
+    for item in all_seq_data:
+        all_words.extend(item)
+    collection_utils.unique(all_words, lambda x, y: cmp(x, y))
+    count = collection_utils.list(len(all_words), 0)
+    for row in all_seq_data:
+        for word in row:
+            index = collection_utils.binary_search(all_words, word)
+            if index != -1:
+                count[index] += 1
+    return all_words, count
+
+@profile
+def feature_extractor_tf_idf(paper_details):
+    """
+
+    :param paper_details:
+    :return: paper_details
+    """
+    all_words, count = cal_IDF([item['abstract_seq'] for item in paper_details])
+    all_words_size = len(all_words)
+    for row in paper_details:
+        row_feature = collection_utils.list(all_words_size, 0)
+        abstract_seq_tf = row['abstract_seq_tf']
+        for col in abstract_seq_tf:
+            tf = col[2]
+            all_words_index = collection_utils.binary_search(all_words, col[0])
+            idf = count[all_words_index]
+            row_feature[all_words_index] = tf*idf
+        row['tf_idf'] = row_feature
+    return paper_details
+
+
+
 def main(argv):
-    parse_all()
     return
 
 
