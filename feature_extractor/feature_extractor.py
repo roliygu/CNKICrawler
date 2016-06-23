@@ -2,6 +2,7 @@
 # coding=utf-8
 import sys
 
+import time
 import jieba
 import jieba.analyse
 import jieba.posseg as pseg
@@ -128,9 +129,12 @@ def parse_items_and_insert(array):
 
 
 def parse_all():
+    start = time.time()
     cursor = mongo_utils.get_all_paper_detail()
     result = cursor_to_list(cursor)
     multiprocessing_groups(result, 4, parse_items_and_insert, 250)
+    end = time.time()
+    print("time: " + str((end - start)*1.0/60))
 
 
 def main(argv):
