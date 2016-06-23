@@ -17,13 +17,13 @@ __author__ = 'roliy'
 
 # jieba example
 def jieba_example():
-    raw = "我爱北京天安门"
+    raw = "我爱北京S5天安门（,123,三,四"
     raw_seq = jieba.cut(raw)
     raw_seq_list = jieba.lcut(raw)
     raw_keyword = jieba.analyse.extract_tags(raw, topK=3, withWeight=False, allowPOS=())
     raw_with_ictclas = pseg.cut(raw)
     for word, flag in raw_with_ictclas:
-        print(word, flag)
+        print word, flag
 
 
 def get_stop_words():
@@ -53,10 +53,11 @@ def build_tf(raw_str):
     :return: list[(str, int)], list[str]
     """
     raw_seq_with_flag = cut_with_flag(raw_str)
+    total_word_num = len(raw_seq_with_flag)
     word_frequency_map = collection_utils.count_by(raw_seq_with_flag, lambda x: x[0])
     res = []
     for key in word_frequency_map.keys():
-        res.append((key, word_frequency_map[key]))
+        res.append((key, word_frequency_map[key], word_frequency_map[key]*1.0/total_word_num))
     return res, word_frequency_map.keys()
 
 
@@ -99,7 +100,10 @@ def filter_invalid_word(items):
     def filter_stop_word(t):
         return collection_utils.select(t, lambda x: (u'u' not in x[1]) and (x[0] not in stop_words))
 
-    return filter_stop_word(filter_char(items))
+    def filter_number(t):
+        return collection_utils.select(t, lambda x: u'm' != x[1])
+
+    return filter_number(filter_stop_word(filter_char(items)))
 
 
 def cursor_to_list(cursor):
