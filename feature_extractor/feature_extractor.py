@@ -176,16 +176,15 @@ def cal_IDF(all_seq_data):
         all_words.extend(item)
     cnki_logger.info("Before unique: [%d]" % len(all_words))
     all_words = collection_utils.unique(all_words, lambda x, y: cmp(x, y))
-    cnki_logger.info("After unique: [%d]" % len(all_words))
+    size = len(all_words)
     dump_words(all_words)
-    count = collection_utils.list(len(all_words), 0)
+    count = collection_utils.list(size, 0)
     for row in all_seq_data:
         for word in row:
             index = collection_utils.binary_search(all_words, word)
             if index != -1:
                 count[index] += 1
-    cnki_logger.info("End calculating IDF. words number is [%s]" % len(all_words))
-    size = len(all_words)
+    cnki_logger.info("End calculating IDF. words number is [%s]" % size)
     idf = [math.log(size * 1.0 / (i + 1)) for i in count]
     return all_words, idf
 
