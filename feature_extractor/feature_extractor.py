@@ -18,7 +18,7 @@ sys.setdefaultencoding('utf-8')
 __author__ = 'roliy'
 
 
-logger = logging.getLogger("CNKI")
+cnki_logger = logging.getLogger("CNKI")
 
 # jieba example
 def jieba_example():
@@ -153,13 +153,13 @@ def cal_IDF(all_seq_data):
     :param all_seq_data:
     :return:
     """
-    logger.info("Start calculating IDF")
+    cnki_logger.info("Start calculating IDF")
     all_words = []
     for item in all_seq_data:
         all_words.extend(item)
-    logging.info("Before unique: [%d]" % len(all_words))
+    cnki_logger.info("Before unique: [%d]" % len(all_words))
     all_words = collection_utils.unique(all_words, lambda x, y: cmp(x, y))
-    logging.info("After unique: [%d]" % len(all_words))
+    cnki_logger.info("After unique: [%d]" % len(all_words))
     dump_words(all_words)
     count = collection_utils.list(len(all_words), 0)
     for row in all_seq_data:
@@ -167,7 +167,7 @@ def cal_IDF(all_seq_data):
             index = collection_utils.binary_search(all_words, word)
             if index != -1:
                 count[index] += 1
-    logger.info("End calculating IDF. words number is [%s]" % len(all_words))
+    cnki_logger.info("End calculating IDF. words number is [%s]" % len(all_words))
     return all_words, count
 
 
@@ -177,7 +177,7 @@ def feature_extractor_tf_idf(paper_details):
     :param paper_details:
     :return: paper_details
     """
-    logger.info("Start calculating TF-IDF")
+    cnki_logger.info("Start calculating TF-IDF")
     all_words, count = cal_IDF([item['abstract_seq'] for item in paper_details])
     for row in paper_details:
         row_feature = []
@@ -188,7 +188,7 @@ def feature_extractor_tf_idf(paper_details):
             idf = count[all_words_index]
             row_feature.append((all_words_index, tf*idf))
         row['tf_idf'] = row_feature
-    logger.info("End calculating TF-IDF")
+    cnki_logger.info("End calculating TF-IDF")
     return paper_details
 
 
