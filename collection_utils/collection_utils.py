@@ -1,8 +1,8 @@
 #! usr/bin/python
 # coding=utf-8
 import sys
-import bisect
 import random
+import bisect
 
 __author__ = 'roliy'
 
@@ -16,16 +16,16 @@ def unique(array, compare_func, is_order=False):
     :param iteratee: -1/0/1 => T, T
     :return:
     """
-    def uni(array):
-        index = 1
-        while index != len(array):
-            if compare_func(array[index], array[index-1]) == 0:
-                del array[index]
-            else:
-                index += 1
-        return array
-    if not array:
+    if (not array) or (len(array) == 0):
         return []
+
+    def uni(t_array):
+        res = [t_array[0]]
+        for i in t_array:
+            if compare_func(res[-1], i) != 0:
+                res.append(i)
+        return res
+
     if len(array) == 1:
         return array
     if is_order:
@@ -84,10 +84,27 @@ def select(array, predicate):
 
 
 def binary_search(a, x):
+    """
+    find the index of x in a with binary search. if not found, return -1.
+    :param a: list[T]
+    :param x: T
+    :return: int
+    """
     i = bisect.bisect_left(a, x)
     if i != len(a) and a[i] == x:
         return i
     return -1
+
+
+def list(size, elem):
+    """
+    product a list contains [size] elements
+    :param size:
+    :param elem: elem should be simple type
+    :return:
+    """
+    res = [elem]
+    return res * size
 
 
 def main(argv):
