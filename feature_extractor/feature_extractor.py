@@ -141,6 +141,13 @@ def parse_all():
     print("time: " + str((end - start)*1.0/60))
 
 
+def dump_words(data):
+    with open("./all_words", 'w') as file:
+        for word in data:
+            file.write(word)
+            file.write(",")
+
+
 def cal_IDF(all_seq_data):
     """
     :param all_seq_data:
@@ -150,7 +157,10 @@ def cal_IDF(all_seq_data):
     all_words = []
     for item in all_seq_data:
         all_words.extend(item)
+    logging.info("Before unique: [%d]" % len(all_words))
     all_words = collection_utils.unique(all_words, lambda x, y: cmp(x, y))
+    logging.info("After unique: [%d]" % len(all_words))
+    dump_words(all_words)
     count = collection_utils.list(len(all_words), 0)
     for row in all_seq_data:
         for word in row:
