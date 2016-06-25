@@ -8,7 +8,8 @@ from bs4 import BeautifulSoup
 import time
 import datetime
 import multiprocessing
-import array
+import logging
+import logging.config
 
 import crawler.crawler as crawler
 import crawler.cnki.constants as constants
@@ -23,6 +24,8 @@ sys.setdefaultencoding('utf-8')
 
 session = requests.session()
 
+logging.config.fileConfig("resource/logging.conf")
+cnki_logger = logging.getLogger("CNKI")
 
 ############### build header or param ###############
 
@@ -371,11 +374,11 @@ def reduce_repeat():
 
 def main(arv):
     data = mongo_utils.get_all_seq_doctor()
-    data = [i for i in data]
+    logging.info("End get all data")
     feature_extractor.feature_extractor_tf_idf(data)
     for row in data:
         mongo_utils.update_abstract_tf_idf(row)
-    print("hello")
+    logging.info("End")
 
 
 if __name__ == '__main__':

@@ -68,11 +68,13 @@ def get_all_url():
 
 
 def get_all_paper_detail():
-    return db.doctor.find(limit=5000)
+    cursor = db.doctor.find(limit=5000)
+    return [i for i in cursor]
 
 
 def get_all_seq_doctor():
-    return db.seq_doctor.find()
+    cursor = db.seq_doctor.find()
+    return [i for i in cursor]
 
 
 def update_abstract_tf_idf(data):
