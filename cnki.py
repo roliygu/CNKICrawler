@@ -2,14 +2,15 @@
 # coding=utf-8
 
 import sys
-import requests
 import math
-from bs4 import BeautifulSoup
 import time
 import datetime
 import multiprocessing
 import logging
 import logging.config
+
+import requests
+from bs4 import BeautifulSoup
 
 import crawler.crawler as crawler
 import crawler.cnki.constants as constants
@@ -21,11 +22,11 @@ import feature_extractor.feature_extractor as feature_extractor
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-
 session = requests.session()
 
 logging.config.fileConfig("resource/logging.conf")
 cnki_logger = logging.getLogger("CNKI")
+
 
 ############### build header or param ###############
 
@@ -103,6 +104,7 @@ def build_valid_header():
     res["Cookie"] = "RsPerPage=50; ASP.NET_SessionId=%s" % asp_id
     return res
 
+
 ############### end build header or param ###############
 ############### build paper detail ###############
 
@@ -111,6 +113,7 @@ def find_school(soup):
         if tag.has_attr('class'):
             return u'KnowledgeNetLink' in tag.get('class') and tag.has_attr('onclick')
         return False
+
     return soup.find_all(has_class_but_no_id)[0].get_text()
 
 
@@ -138,6 +141,7 @@ def find_abstract(soup):
 def find_author_info(soup):
     def has_class_summary(tag):
         return tag.has_attr('class') and u'summary' in tag.get('class')
+
     ps = soup.find(has_class_summary).find_all('p')
     name, teachers, school, other = None, [], None, None
     for i in ps:
@@ -147,7 +151,7 @@ def find_author_info(soup):
         if u'作者基本信息' in html:
             school = i.find('a').get_text().strip()
             other = html.split("\r\n")
-            other = other[len(other)-3:]
+            other = other[len(other) - 3:]
             other = [item.strip().replace(u'，', "") for item in other]
             other[1] = int(other[1])
         if u'导师' in html:
@@ -261,6 +265,7 @@ def is_check_code_page(html):
 def find_item_num(html):
     def has_class_pager_title_cell(tag):
         return tag.has_attr('class') and u'pagerTitleCell' in tag.get('class')
+
     soup = BeautifulSoup(html.decode("utf8"), "html.parser")
     target = soup.find(has_class_pager_title_cell)
     value_str = target.get_text()[4:-5]
@@ -269,7 +274,7 @@ def find_item_num(html):
 
 
 def calculate_page_num(item_num):
-    return int(math.ceil(item_num*1.0/50))
+    return int(math.ceil(item_num * 1.0 / 50))
 
 
 def get_first_page(tag):
@@ -292,6 +297,7 @@ def get_first_page(tag):
 def parse_url_list(paper_list_page):
     def has_class_fz14(tag):
         return tag.has_attr('class') and u'fz14' in tag.get('class')
+
     soup = BeautifulSoup(paper_list_page.decode("utf8"), "html.parser")
     res = soup.find_all(has_class_fz14)
     return [i['href'] for i in res]
@@ -344,8 +350,8 @@ def build_paper_url(parent_tag_tag_tuple):
         for index in range(page_num):
             current_page = index + 1
             ith_page = session.get(constants.ith_page_uri,
-                               params=build_ith_page_query(ctl, current_page, query_id),
-                               headers=new_header).text
+                                   params=build_ith_page_query(ctl, current_page, query_id),
+                                   headers=new_header).text
             if is_check_code_page(ith_page):
                 ctl, new_header, first_page_html = get_first_page(tag)
                 ith_page = session.get(constants.ith_page_uri,
@@ -365,14 +371,14 @@ def build_paper_url(parent_tag_tag_tuple):
 
 def reduce_repeat():
     all = [i for i in mongo_utils.get_all_paper_detail()]
-    collection_utils.unique(all, lambda x, y: cmp(x['name']+x['title'], y['name']+y['title']))
+    collection_utils.unique(all, lambda x, y: cmp(x['name'] + x['title'], y['name'] + y['title']))
     print(len(all))
     mongo_utils.insert_reduce_paper_detail(all)
 
+
 ############### end other process ###############
 
-
-def main(arv):
+def feature_extractor2():
     cnki_logger.info("==================")
     data = mongo_utils.get_all_seq_doctor()
     cnki_logger.info("End get all data")
@@ -380,6 +386,11 @@ def main(arv):
     for row in data:
         mongo_utils.update_abstract_tf_idf(row)
     cnki_logger.info("End")
+
+
+# @profile
+def main(arv):
+    feature_extractor2()
 
 
 if __name__ == '__main__':

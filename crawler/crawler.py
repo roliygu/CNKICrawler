@@ -4,6 +4,7 @@
 import urllib2
 import socket
 
+
 def build_header():
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.3",
@@ -28,8 +29,7 @@ def retry_urlopen(uri, retry_time, data=None, time_out=3):
     try:
         response = urllib2.urlopen(uri, data=data, timeout=time_out)
     except socket.timeout:
-        return retry_urlopen(uri, retry_time-1, data=data, time_out=time_out)
+        return retry_urlopen(uri, retry_time - 1, data=data, time_out=time_out)
     except urllib2.URLError:
-        return retry_urlopen(uri, retry_time-1, data=data, time_out=time_out)
+        return retry_urlopen(uri, retry_time - 1, data=data, time_out=time_out)
     return response
-
