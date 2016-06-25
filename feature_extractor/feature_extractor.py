@@ -1,13 +1,14 @@
 #! usr/bin/python
 # coding=utf-8
 import sys
-
 import time
+import multiprocessing
+import math
+import logging
+
 import jieba
 import jieba.analyse
 import jieba.posseg as pseg
-import multiprocessing
-import logging
 
 import mongo_utils.mongo_utils as mongo_utils
 import collection_utils.collection_utils as collection_utils
@@ -17,8 +18,8 @@ sys.setdefaultencoding('utf-8')
 
 __author__ = 'roliy'
 
-
 cnki_logger = logging.getLogger("CNKI")
+
 
 # jieba example
 def jieba_example():
@@ -62,7 +63,7 @@ def build_tf(raw_str):
     word_frequency_map = collection_utils.count_by(raw_seq_with_flag, lambda x: x[0])
     res = []
     for key in word_frequency_map.keys():
-        res.append((key, word_frequency_map[key], word_frequency_map[key]*1.0/total_word_num))
+        res.append((key, word_frequency_map[key], word_frequency_map[key] * 1.0 / total_word_num))
     return res, word_frequency_map.keys()
 
 
@@ -138,7 +139,7 @@ def parse_all():
     result = cursor_to_list(cursor)
     multiprocessing_groups(result, 4, parse_items_and_insert, 250)
     end = time.time()
-    print("time: " + str((end - start)*1.0/60))
+    print("time: " + str((end - start) * 1.0 / 60))
 
 
 def dump_words(data):
@@ -146,6 +147,22 @@ def dump_words(data):
         for word in data:
             file.write(word)
             file.write(",")
+
+
+def statistic(array):
+    count_map = collection_utils.count_by(array, lambda x: x)
+    time_map = {}
+    for key in count_map.keys():
+        if count_map[key] in time_map.keys():
+            time_map[count_map[key]] += 1
+        else:
+            time_map[count_map[key]] = 1
+    ar = []
+    for key in time_map:
+        ar.append((key, time_map[key]))
+    ar.sort(lambda x, y: cmp(x[0], y[0]))
+    for i in ar:
+        print i
 
 
 def cal_IDF(all_seq_data):
@@ -168,7 +185,9 @@ def cal_IDF(all_seq_data):
             if index != -1:
                 count[index] += 1
     cnki_logger.info("End calculating IDF. words number is [%s]" % len(all_words))
-    return all_words, count
+    size = len(all_words)
+    idf = [math.log(size * 1.0 / (i + 1)) for i in count]
+    return all_words, idf
 
 
 def feature_extractor_tf_idf(paper_details):
@@ -186,7 +205,7 @@ def feature_extractor_tf_idf(paper_details):
             tf = col[2]
             all_words_index = collection_utils.binary_search(all_words, col[0])
             idf = count[all_words_index]
-            row_feature.append((all_words_index, tf*idf))
+            row_feature.append((all_words_index, tf * idf))
         row['tf_idf'] = row_feature
     cnki_logger.info("End calculating TF-IDF")
     return paper_details

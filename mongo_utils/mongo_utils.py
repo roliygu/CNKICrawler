@@ -1,10 +1,10 @@
 #! usr/bin/python
 # coding=utf-8
-import sys
+
+import pymongo
 
 import crawler.cnki.cnki_class as cnki_class
 import collection_utils.collection_utils as collection_utils
-import pymongo
 
 __author__ = 'roliy'
 

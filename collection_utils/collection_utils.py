@@ -1,7 +1,6 @@
 #! usr/bin/python
 # coding=utf-8
 import sys
-import random
 import bisect
 
 __author__ = 'roliy'
