@@ -10,3 +10,4 @@ nohup.out
 cnki.py.lprof
 doc/picture/
 logs/
+.DS_Store

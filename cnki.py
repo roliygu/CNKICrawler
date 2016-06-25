@@ -373,12 +373,13 @@ def reduce_repeat():
 
 
 def main(arv):
+    cnki_logger.info("==================")
     data = mongo_utils.get_all_seq_doctor()
-    logging.info("End get all data")
+    cnki_logger.info("End get all data")
     feature_extractor.feature_extractor_tf_idf(data)
     for row in data:
         mongo_utils.update_abstract_tf_idf(row)
-    logging.info("End")
+    cnki_logger.info("End")
 
 
 if __name__ == '__main__':
