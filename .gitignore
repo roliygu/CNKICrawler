@@ -9,4 +9,6 @@ nohup.out
 *.pyc
 cnki.py.lprof
 doc/picture/
-feature_extractor/
+logs/
+.DS_Store
+all_words

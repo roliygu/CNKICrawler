@@ -6,7 +6,6 @@ __author__ = 'roliy'
 
 
 class PaperURL(object):
-
     def __init__(self, urls, tag, parent_tag):
         self.urls = urls
         self.tag = tag
@@ -21,7 +20,6 @@ class PaperURL(object):
 
 
 class PaperDetail(object):
-
     def __init__(self, name, title, school, abstract,
                  uri, author_other, paper_info, keyword, teachers):
         self.name = name
@@ -49,7 +47,6 @@ class PaperDetail(object):
 
 
 def main(argv):
-
     return
 
 

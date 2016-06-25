@@ -1,15 +1,15 @@
 #! usr/bin/python
 # coding=utf-8
-import sys
+
+import pymongo
 
 import crawler.cnki.cnki_class as cnki_class
 import collection_utils.collection_utils as collection_utils
-import pymongo
 
 __author__ = 'roliy'
 
 # if used for multiprocessing, connect should be False
-client = pymongo.MongoClient("192.168.31.230", 27017, connect=False)
+client = pymongo.MongoClient("127.0.0.1", 27017, connect=False)
 
 db = client.cnki
 
@@ -19,11 +19,19 @@ def insert_url(data):
 
 
 def insert_paper_detail(data):
-    return db.doctor_new.insert_one(data).inserted_id
+    return db.doctor.insert_one(data).inserted_id
 
 
 def insert_reduce_paper_detail(data):
     return db.reduce_doctor.insert_many(data)
+
+
+def insert_seq_paper_detail(data):
+    return db.seq_doctor.insert_many(data)
+
+
+def get_example_seq_doctor():
+    return db.seq_doctor.find_one({"_id": "576a5bfe7bd5270b53693c8f"})
 
 
 def get_url_by_tag(tag):
@@ -60,8 +68,14 @@ def get_all_url():
 
 
 def get_all_paper_detail():
-    return db.doctor_new.find()
+    cursor = db.doctor.find(limit=5000)
+    return [i for i in cursor]
 
 
-def insert_many(data):
-    return db.doctor.insert_many(data).inserted_ids
+def get_all_seq_doctor():
+    cursor = db.seq_doctor.find()
+    return [i for i in cursor]
+
+
+def update_abstract_tf_idf(data):
+    return db.seq_doctor.find_one_and_update({"_id": data["_id"]}, {'$set': {'tf_idf': data['tf_idf']}})
