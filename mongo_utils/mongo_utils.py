@@ -73,3 +73,7 @@ def get_all_paper_detail():
 
 def get_all_seq_doctor():
     return db.seq_doctor.find()
+
+
+def update_abstract_tf_idf(data):
+    return db.seq_doctor.find_one_and_update({"_id": data["_id"]}, {'$set': {'tf_idf': data['tf_idf']}})

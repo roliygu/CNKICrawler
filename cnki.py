@@ -368,11 +368,13 @@ def reduce_repeat():
 
 ############### end other process ###############
 
-@profile
+
 def main(arv):
     data = mongo_utils.get_all_seq_doctor()
     data = [i for i in data]
     feature_extractor.feature_extractor_tf_idf(data)
+    for row in data:
+        mongo_utils.update_abstract_tf_idf(row)
     print("hello")
 
 
