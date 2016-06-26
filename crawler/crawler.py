@@ -1,6 +1,9 @@
 #! usr/bin/python
 # coding=utf-8
 
+import urllib2
+import socket
+
 
 def build_header():
     headers = {
@@ -20,3 +23,13 @@ def warp_header(dic):
     return row_header
 
 
+def retry_urlopen(uri, retry_time, data=None, time_out=3):
+    if retry_time <= 0:
+        raise AttributeError("retry_time is used up.")
+    try:
+        response = urllib2.urlopen(uri, data=data, timeout=time_out)
+    except socket.timeout:
+        return retry_urlopen(uri, retry_time - 1, data=data, time_out=time_out)
+    except urllib2.URLError:
+        return retry_urlopen(uri, retry_time - 1, data=data, time_out=time_out)
+    return response
