@@ -26,5 +26,5 @@
 email：279581355@qq.com、roliygu@gmail.com
 额，值得一提的是，中间数据并没有用git管理起来，所以直接跑cnki.py是跑不起来的，如果想自己跑一下的话，可以等我再完善一下。
 
-所有数据已经上传到百度云,大家可以从 http://pan.baidu.com/s/1miGoNPY 下载.如果觉得不错,请给本project加一颗start,谢谢~
+所有数据已经上传到百度云,大家可以从 http://pan.baidu.com/s/1miGoNPY 下载.如果觉得不错,还请给本project加一颗star,谢谢~
 p.s. 建议用mongodb import之后查看.
