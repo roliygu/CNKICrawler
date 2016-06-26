@@ -20,22 +20,11 @@
     "teacher" : [ "陈平；" ]    // 指导老师
 }
 ```
-目前总共收集到373581条纪录。
+目前总共收集到的数据去重后有27万条纪录左右。
 收集这些数据的主要目的还是为了之后NLP或者其他ML/DL实验使用。比如接下来我会拿这些数据试一试文本分类。
 当然，如果你对这些数据感兴趣或者有什么想法，欢迎联系我。
 email：279581355@qq.com、roliygu@gmail.com
 额，值得一提的是，中间数据并没有用git管理起来，所以直接跑cnki.py是跑不起来的，如果想自己跑一下的话，可以等我再完善一下。
 
-### 1. Dependency
-
-If you want run this program, you need install some other python package. Including requests, BeautifulSoup4, etc...
-There should be the mongoDB on your pc, because the latest program's data storage base on mongoDB.
-To install python package, you can use "pip install package_name" command (require pip had been installed in your pc successfully).
-And make sure your mongoDB can be connected, such as ip, port, username and password, etc, are right. Mongo's connect options all in the mongo_utils/mongo_utils.py
-
-### 2. DataStruct
-
-#### 2.1 PaperURL
-
-The PaperURL model is crawler/cnki_class.PaperURL. It represents the url list of paper with different tag.
-
+所有数据已经上传到百度云,大家可以从 http://pan.baidu.com/s/1miGoNPY 下载.如果觉得不错,请给本project加一颗start,谢谢~
+p.s. 建议用mongodb import之后查看.
