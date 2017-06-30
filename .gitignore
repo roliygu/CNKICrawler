@@ -1,14 +1,3 @@
-tmp
 .idea/
-page/
-data/
-page_back/
-data_back/
-json/
-nohup.out
-*.pyc
-cnki.py.lprof
-doc/picture/
-logs/
-.DS_Store
-all_words
+log/*
+tmp/*
