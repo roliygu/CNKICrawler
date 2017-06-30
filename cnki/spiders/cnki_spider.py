@@ -1,18 +1,10 @@
 #! usr/bin/python
 # coding=utf-8
 
-import scrapy
-
 import cnki.spider_utils.util as spider_util
 import global_constant
-from cnki.paper_abstract import Author as AbstractAuthor
-from cnki.paper_detail import Author as DetailAuthor
-from cnki.paper_abstract import Download
-from cnki.paper_abstract import PaperAbstract
-from cnki.paper_abstract import Reference
-from cnki.paper_abstract import Source
-from cnki.paper_abstract import Title
-
+from cnki.paper_abstract import *
+from cnki.paper_detail import *
 
 __author__ = 'roliy'
 
@@ -24,11 +16,15 @@ class CNKISpider(scrapy.Spider):
     global_constant.logger.info("Send header is %s", str(header))
 
     def start_requests(self):
+        """
+        爬虫的起点
+        :return:
+        """
         return self.request_cookie()
 
     def request_cookie(self):
         """
-        请求cookie
+        step 1. 请求cookie
         :return:
         """
         request_cookie_urls = [global_constant.default_result_url]
@@ -37,19 +33,19 @@ class CNKISpider(scrapy.Spider):
 
     def parse_cookie(self, response):
         """
-        解析response,得到cookie
+        step 2. 解析response,得到cookie
         :param response:
         :return:
         """
-        sid_kns = str.split(spider_util.get_request_cookies(response)[0], "=")[1]
-        asp_session_id = str.split(spider_util.get_response_cookies(response)[0], "; ")[0].split("=")[1]
+        sid_kns = spider_util.get_request_cookies(response)[0].split("=")[1]
+        asp_session_id = spider_util.get_response_cookies(response)[0].split("; ")[0].split("=")[1]
         self.cookie = spider_util.wrap_cookie(sid_kns, asp_session_id)
         global_constant.logger.info("Get cookie is %s", str(self.cookie))
         return self.register_cookie()
 
     def register_cookie(self):
         """
-        得到的cookie并不是合法的,需要注册
+        step 3. 得到的cookie并不是合法的,需要注册
         :return:
         """
         urls = [global_constant.search_handler_url]
@@ -57,15 +53,28 @@ class CNKISpider(scrapy.Spider):
             yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=self.parse_register)
 
     def parse_register(self, response):
-        # do something with response
+        """
+        step 4. cookie注册成功
+        :param response:
+        :return:
+        """
         return self.request_abstract_list()
 
     def request_abstract_list(self):
-        urls = [global_constant.detail_test_url]
+        """
+        step 5. 通过某些方式得到要遍历的`论文概要列表`的url,并发起request
+        :return:
+        """
+        urls = [global_constant.detail_test_url]  # todo 先写死一个url
         for url in urls:
             yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=self.parse_abstract_list)
 
     def parse_abstract_list(self, response):
+        """
+        step 6. 解析概要列表,得到详情url
+        :param response:
+        :return:
+        """
         rows = response.css("table.GridTableContent TR")
         detail_urls = []
         for row in rows[1:]:
@@ -74,34 +83,101 @@ class CNKISpider(scrapy.Spider):
         for url in detail_urls:
             yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=parse_paper_detail)
 
-    index = 1
-
-    def parse_detail(self, response):
-        filename = 'tmp/test_detail_%d.html' % self.index
-        self.index += 1
-        with open(filename, 'wb') as f:
-            f.write(response.body)
-
 
 def parse_paper_detail(response):
     """
+    step 7: 解析论文详情页面
+    :param response:
+    :return:
+    """
+    (title, authors, organizations) = parse_paper_detail_wxmain(response)
+    (abstract, tutors, catalog, keywords, doi) = parse_paper_detail_wxinfo(response)
+    (download_num, page_num, size) = parse_paper_detail_total(response)
 
+    paper_detail = PaperDetail.new_instance(
+        url=response.request.url, title=title, authors=authors, organizations=organizations, abstract=abstract,
+        tutors=tutors, catalog=catalog, keywords=keywords, doi=doi, page_num=page_num, download_num=download_num,
+        size=size
+    )
+
+    print paper_detail
+
+
+def parse_paper_detail_total(response):
+    div_total = response.css("div.total").css("span").css("b::text").extract()
+    download_num = div_total[0]
+    page_num = div_total[1]
+    size = div_total[2]
+    return download_num, page_num, size
+
+
+def parse_paper_detail_wxinfo(response):
+    abstract = None
+    tutors = None
+    catalog = None
+    keywords = None
+    doi = None
+    wx_info = response.css("div.wxInfo").css("div")
+    for p in wx_info.css("p"):
+        label_id = p.css("label::attr(id)").extract_first()
+        if label_id is not None:
+            label_id = label_id.strip()
+            if label_id == "catalog_ABSTRACT":
+                abstract = p.css("span::text").extract_first()
+            elif label_id == "catalog_TUTOR":  # todo 有点问题,拿到的每个人会重复一遍
+                tutors = []
+                for tutor_html in p.css("a"):
+                    onclick = tutor_html.css("::attr(onclick)").extract_first()
+                    slices = onclick[onclick.find("(") + 1:onclick.rfind(")")].split(",")
+                    tutor = TutorLink.new_instance(
+                        slices[0], slices[1], slices[2]
+                    )
+                    tutors.append(tutor)
+            elif label_id == "catalog_ZTCLS":  # todo 也有重复的问题
+                catalog = p.css("p::text").extract_first()
+            elif label_id == "catalog_KEYWORD":
+                keywords = []
+                for keyword_html in p.css("a"):
+                    onclick = keyword_html.css("::attr(onclick)").extract_first()
+                    slices = onclick[onclick.find("(") + 1:onclick.rfind(")")].split(",")
+                    keyword = KeyWordLink.new_instance(
+                        slices[0], slices[1], slices[2]
+                    )
+                    keywords.append(keyword)
+            elif label_id == "catalog_ZCDOI":
+                doi = p.css("p::text").extract_first()
+    return abstract, tutors, catalog, keywords, doi
+
+
+def parse_paper_detail_wxmain(response):
+    """
+    解析论文详情页中的wxmain
     :param response:
     :return:
     """
     wxmain = response.css("div.wxmain").css("div.wxTitle")
     title = wxmain.css("h2::text").extract_first()
-    print title
-    # authors_html = wxmain.css("div.author").css("span")
-    # for author_html in authors_html:
-    #     onclick = author_html.css("a::attr(onclick)").extract_first().strip()
-    #     slices = onclick[onclick.find("(") + 1:onclick.find(")")].split(",")
-    #     author = DetailAuthor.new_instance(
-    #         slices[0],
-    #         slices[1],
-    #         slices[2]
-    #     )
-    #     print author
+    authors_html = wxmain.css("div.author").css("span")
+    authors = []
+    for author_html in authors_html:
+        onclick = author_html.css("a::attr(onclick)").extract_first().strip()
+        slices = onclick[onclick.find("(") + 1:onclick.find(")")].split(",")
+        author = AuthorLink.new_instance(
+            slices[0], slices[1], slices[2]
+        )
+        authors.append(author)
+
+    organizations_html = wxmain.css("div.orgn").css("span")
+    organizations = []
+    for organization_html in organizations_html:
+        onclick = organization_html.css("a::attr(onclick)").extract_first().strip()
+        slices = onclick[onclick.find("(") + 1:onclick.rfind(")")].split(",")
+        organization = OrganizationLink.new_instance(
+            slices[0], slices[1], slices[2]
+        )
+        organizations.append(organization)
+
+    return title, authors, organizations
 
 
 def parse_paper_abstract(row):
@@ -121,7 +197,7 @@ def parse_paper_abstract(row):
     authors = []
     authors_col = cols[2]
     for author_html in authors_col.xpath("a"):
-        author = AbstractAuthor().new_instance(
+        author = Author().new_instance(
             author_html.xpath("text()").extract_first(),
             author_html.xpath("@href").extract_first()
         )
