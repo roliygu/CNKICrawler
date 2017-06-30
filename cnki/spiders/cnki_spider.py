@@ -2,15 +2,17 @@
 # coding=utf-8
 
 import scrapy
+
 import cnki.spider_utils.util as spider_util
 import global_constant
-from scrapy.loader import ItemLoader
-from cnki.items import PaperAbstract
-from cnki.items import Author
-from cnki.items import Title
-from cnki.items import Source
-from cnki.items import Reference
-from cnki.items import Download
+from cnki.paper_abstract import Author as AbstractAuthor
+from cnki.paper_detail import Author as DetailAuthor
+from cnki.paper_abstract import Download
+from cnki.paper_abstract import PaperAbstract
+from cnki.paper_abstract import Reference
+from cnki.paper_abstract import Source
+from cnki.paper_abstract import Title
+
 
 __author__ = 'roliy'
 
@@ -56,26 +58,53 @@ class CNKISpider(scrapy.Spider):
 
     def parse_register(self, response):
         # do something with response
-        return self.test_request_detail()
+        return self.request_abstract_list()
 
-    def test_request_detail(self):
+    def request_abstract_list(self):
         urls = [global_constant.detail_test_url]
         for url in urls:
-            yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=self.test_parse_detail)
+            yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=self.parse_abstract_list)
 
-    def test_parse_detail(self, response):
+    def parse_abstract_list(self, response):
         rows = response.css("table.GridTableContent TR")
-        print parse_paper_abstract_with_xpath(rows[1])
-        # for row in rows[1:]:
-        #     paper = parse_paper_abstract_with_xpath(row)
-        #     print paper["title"]["text"]
-        filename = 'tmp/test_detail.html'
+        detail_urls = []
+        for row in rows[1:]:
+            paper_abstract = parse_paper_abstract(row)
+            detail_urls.append(global_constant.url_prefix + paper_abstract["title"]["url"])
+        for url in detail_urls:
+            yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=parse_paper_detail)
+
+    index = 1
+
+    def parse_detail(self, response):
+        filename = 'tmp/test_detail_%d.html' % self.index
+        self.index += 1
         with open(filename, 'wb') as f:
             f.write(response.body)
-        global_constant.logger.info('Saved file %s' % filename)
 
 
-def parse_paper_abstract_with_xpath(row):
+def parse_paper_detail(response):
+    """
+
+    :param response:
+    :return:
+    """
+    wxmain = response.css("div.wxmain").css("div.wxTitle")
+    title = wxmain.css("h2::text").extract_first()
+    print title
+    # authors_html = wxmain.css("div.author").css("span")
+    # for author_html in authors_html:
+    #     onclick = author_html.css("a::attr(onclick)").extract_first().strip()
+    #     slices = onclick[onclick.find("(") + 1:onclick.find(")")].split(",")
+    #     author = DetailAuthor.new_instance(
+    #         slices[0],
+    #         slices[1],
+    #         slices[2]
+    #     )
+    #     print author
+
+
+def parse_paper_abstract(row):
     """
     基于xpath的解析
     :param row:
@@ -92,7 +121,7 @@ def parse_paper_abstract_with_xpath(row):
     authors = []
     authors_col = cols[2]
     for author_html in authors_col.xpath("a"):
-        author = Author().new_instance(
+        author = AbstractAuthor().new_instance(
             author_html.xpath("text()").extract_first(),
             author_html.xpath("@href").extract_first()
         )
@@ -112,7 +141,7 @@ def parse_paper_abstract_with_xpath(row):
         ref_num = ref_num_html.encode("utf-8")
     reference = Reference.new_instance(
         ref_num,
-        cols[6].xpath("a.KnowledgeNetLink/@onClick").extract_first()    # todo 取到的是None
+        cols[6].xpath("a.KnowledgeNetLink/@onClick").extract_first()  # todo 取到的是None
     )
 
     download_num = "0"

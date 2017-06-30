@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-# Define here the models for your scraped items
-#
-# See documentation in:
-# http://doc.scrapy.org/en/latest/topics/items.html
+# 论文概要页面的Model
 
 import scrapy
+
+__author__ = 'roliy'
 
 
 class Author(scrapy.Item):
@@ -85,9 +84,3 @@ class PaperAbstract(scrapy.Item):
     database = scrapy.Field()
     reference = scrapy.Field()
     download = scrapy.Field()
-
-
-class TutorialItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
