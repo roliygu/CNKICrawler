@@ -4,6 +4,7 @@
 import scrapy
 import cnki.spider_utils.util as spider_util
 import global_constant
+from scrapy.loader import ItemLoader
 from cnki.items import PaperAbstract
 from cnki.items import Author
 from cnki.items import Title
@@ -65,18 +66,73 @@ class CNKISpider(scrapy.Spider):
     def test_parse_detail(self, response):
         rows = response.css("table.GridTableContent TR")
         for row in rows[1:]:
-            paper = wrap_paper_abstract(row)
+            paper = wrap_paper_abstract_with_xpath(row)
             print paper["title"]["text"]
-        # print response.css("a.KnowledgeNetLink")
         filename = 'tmp/test_detail.html'
         with open(filename, 'wb') as f:
             f.write(response.body)
         global_constant.logger.info('Saved file %s' % filename)
 
 
-def wrap_paper_abstract(row):
+def wrap_paper_abstract_with_xpath(row):
     """
+    基于xpath的解析
+    :param row:
+    :return:
+    """
+    paper_abstract = PaperAbstract()
+    cols = row.xpath("td")
 
+    title_col = cols[1]
+    title = Title()
+    title["text"] = title_col.xpath("a/text()").extract_first().encode("utf-8")
+    title["url"] = title_col.xpath("a/@href").extract_first()
+    paper_abstract["title"] = title
+
+    authors = []
+    authors_col = cols[2]
+    for author_html in authors_col.xpath("a"):
+        author = Author()
+        author["name"] = author_html.xpath("text()").extract_first().encode("utf-8")
+        author["url"] = author_html.xpath("@href").extract_first()
+        authors.append(author)
+    paper_abstract["authors"] = authors
+
+    source_col = cols[3]
+    source = Source()
+    source["text"] = source_col.xpath("a/text()").extract_first().encode("utf-8")
+    source["url"] = source_col.xpath("a/@href").extract_first()
+    paper_abstract["source"] = source
+
+    paper_abstract["publish_time"] = cols[4].xpath("text()").extract_first().encode("utf-8")
+    paper_abstract["database"] = cols[5].xpath("text()").extract_first().encode("utf-8")
+
+    reference = Reference()
+    ref_num_html = cols[6].xpath("a.KnowledgeNetLink/text()").extract_first()
+    if ref_num_html is None:
+        global_constant.logger.warn("reference is 0")
+        reference["number"] = "0"
+    else:
+        reference["number"] = ref_num_html.encode("utf-8")
+    reference["onclick"] = cols[6].xpath("a.KnowledgeNetLink/@onClick").extract_first()  # todo 取到的是None
+    paper_abstract["reference"] = reference
+
+    download = Download()
+    download_num_html = cols[7].xpath("span.downloadCount/a/text()").extract_first()
+    if download_num_html is None:
+        global_constant.logger.warn("download is 0")
+        download["number"] = "0"
+    else:
+        download["number"] = download_num_html.encode("utf-8")
+    download["url"] = cols[7].xpath("a/@href").extract_first().encode("utf-8")
+    paper_abstract["download"] = download
+
+    return paper_abstract
+
+
+def wrap_paper_abstract_with_css(row):
+    """
+    基于css的解析
     :param row: Response[TR]
     :return:
     """
