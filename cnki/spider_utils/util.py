@@ -3,6 +3,8 @@
 
 __author__ = 'roliy'
 
+import cnki.spiders.global_constant as global_constant
+
 
 def get_request_cookies(response):
     """
@@ -22,6 +24,55 @@ def get_response_cookies(response):
     return response.headers.getlist('Set-Cookie')
 
 
+def build_abstract_list_url(page_num):
+    """
+    封装page_num页的概要页请求url
+    :param page_num:
+    :return:
+    """
+    params = {
+        "curpage": str(page_num),
+        "RecordsPerPage": "50",
+        "QueryID": "36",
+        "ID": "",
+        "turnpage": "1",
+        "tpagemode": "L",
+        "dbPrefix": "SCDB",
+        "Fields": "",
+        "DisplayMode": "listmode",
+        "PageName": "ASP.brief_default_result_aspx"
+    }
+    url = global_constant.abstract_list_url + "?"
+    for key, value in params.items():
+        url += key + "=" + value + "&"
+    return url[:-1]
+
+
+def build_search_url(tag):
+    """
+    封装一个合法的查询url
+    :param tag:
+    :return:
+    """
+    params = {
+        "action": "",
+        "NaviCode": tag,
+        "ua": "1.15",
+        "formDefaultResult": "",
+        "PageName": "ASP.brief_default_result_aspx",
+        "DbPrefix": "SCDB",
+        "DbCatalog": "%e4%b8%ad%e5%9b%bd%e5%ad%a6%e6%9c%af%e6%96%87%e7%8c%ae%e7%bd%91%e7%bb%9c%e5%87%ba%e7%89%88%e6%80%bb%e5%ba%93",
+        "ConfigFile": "SCDBINDEX.xml",
+        "db_opt": "CJFQ%2CCDFD%2CCMFD%2CCPFD%2CIPFD%2CCCND",
+        "his": "0",
+        "parentdb": "SCDB"
+    }
+    url = global_constant.search_handler_url + "?"
+    for key, value in params.items():
+        url += key + "=" + value + "&"
+    return url[:-1]  # 多拼一个&
+
+
 def wrap_cookie(sid_kns, asp_session_id):
     """
     封装一个合法的cookie
@@ -31,7 +82,8 @@ def wrap_cookie(sid_kns, asp_session_id):
     """
     return {
         "SID_kns": sid_kns,
-        "ASP.NET_SessionId": asp_session_id
+        "ASP.NET_SessionId": asp_session_id,
+        "RsPerPage": 50
     }
 
 
