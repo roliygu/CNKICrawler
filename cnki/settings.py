@@ -13,13 +13,14 @@ BOT_NAME = 'cnki'
 
 SPIDER_MODULES = ['cnki.spiders']
 NEWSPIDER_MODULE = 'cnki.spiders'
-LOG_LEVEL = 'ERROR'
+LOG_LEVEL = 'INFO'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'cnki (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
+LOG_FILE = "./log/sys.log"
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32

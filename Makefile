@@ -7,7 +7,7 @@ clean:
 install-scrapy:
 	sudo pip install scrapy
 
-run: init clean
+run: init
 	scrapy crawl cnki
 
 init:
