@@ -37,3 +37,7 @@ logger.setLevel(LOG_LEVEL)
 handler = logging.handlers.RotatingFileHandler(LOG_PATH, maxBytes=LOG_FILE_SIZE, backupCount=LOG_MAX_RETAIN)
 handler.setFormatter(logging.Formatter('%(asctime)s %(filename)s [line:%(lineno)d] %(levelname)s %(message)s', '%a, %d %b %Y %H:%M:%S'))
 logger.addHandler(handler)
+
+cookie_batch_num = 20
+cookie_batch = []
+tag = "A"

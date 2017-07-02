@@ -6,6 +6,21 @@ __author__ = 'roliy'
 import cnki.spiders.global_constant as global_constant
 
 
+def get_cookie(response):
+    cookies = response.headers.getlist('Set-Cookie')
+    res = {
+        "SID_kns": None,
+        "ASP.NET_SessionId": None,
+        "RsPerPage": 50
+    }
+    for item in cookies:
+        if item.find("ASP.NET_SessionId") != -1:
+            res["ASP.NET_SessionId"] = item.split("; ")[0].split("=")[1]
+        if item.find("SID_kns") != -1:
+            res["SID_kns"] = item.split("; ")[0].split("=")[1]
+    return res
+
+
 def get_request_cookies(response):
     """
     获取request的cookie

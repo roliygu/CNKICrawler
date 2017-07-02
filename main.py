@@ -1,23 +1,16 @@
+#! usr/bin/python
+# coding=utf-8
+
 import sys
-
-
-def fab(max):
-    n, a, b = 0, 0, 1
-    while n < max:
-        print "hello"
-        yield b
-        print b
-        a, b = b, a + b
-        n = n + 1
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
 
 
 def main(argv):
-    f = fab(5)
-    f.next()
-    f.next()
-    f.next()
-    f.next()
-    f.next()
+    # 获取批量cookie
+    process = CrawlerProcess(get_project_settings())
+    process.crawl('cnki')
+    process.start()
 
 if __name__ == '__main__':
     main(sys.argv[1:])

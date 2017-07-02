@@ -15,8 +15,43 @@ sys.setdefaultencoding('utf-8')
 LOGGER = global_constant.logger
 
 
-class CNKISpider(scrapy.Spider):
+class CNKICookieSpider(scrapy.Spider):
     name = "cnki"
+
+    def start_requests(self):
+        request_cookie_urls = [global_constant.default_result_url for i in range(global_constant.max_cookie_num)]
+        for i, url in enumerate(request_cookie_urls):
+            yield scrapy.Request(url=url, method="POST", callback=self.parse_cookie,
+                                 dont_filter=True, meta={'cookiejar': i}, priority=100)
+
+    def parse_cookie(self, response):
+        requested_cookie = spider_util.get_cookie(response)
+        LOGGER.info("Get Cookie is [%s]", str(requested_cookie))
+        global_constant.cookie_batch.append(requested_cookie)
+        return self.register_cookie({"cookie": requested_cookie})
+
+    def register_cookie(self, meta):
+        """
+        step 3. 得到的cookie并不是合法的,需要注册,并且设置当前查询的tag
+        :return:
+        """
+        tag = "A"
+        urls = [spider_util.build_search_url(tag)]
+        LOGGER.info("Register tag [%s]", tag)
+        for url in urls:
+            yield scrapy.Request(url=url, cookies=meta["cookie"], dont_filter=True, callback=self.parse_register)
+
+    def parse_register(self, response):
+        """
+        step 4. cookie注册成功
+        :param response:
+        :return:
+        """
+        LOGGER.info("Register successful, and parse it")
+
+
+class CNKISpider(scrapy.Spider):
+    name = "cnki_cookie"
     cookie = {}
     header = spider_util.build_request_header()
     global_constant.logger.info("Send header is %s", str(header))
@@ -39,7 +74,7 @@ class CNKISpider(scrapy.Spider):
         request_cookie_urls = [global_constant.default_result_url]
         for url in request_cookie_urls:
             yield scrapy.Request(url=url, method="POST", callback=self.parse_cookie, headers=self.header,
-                                 meta={"only_update": only_update})
+                                 dont_filter=True, cookies={})
 
     def parse_cookie(self, response):
         """
@@ -47,14 +82,9 @@ class CNKISpider(scrapy.Spider):
         :param response:
         :return:
         """
-        sid_kns = spider_util.get_request_cookies(response)[0].split("=")[1]
-        asp_session_id = spider_util.get_response_cookies(response)[0].split("; ")[0].split("=")[1]
-        self.cookie = spider_util.wrap_cookie(sid_kns, asp_session_id)
+        self.cookie = spider_util.get_cookie(response)
         LOGGER.info("Get Cookie is [%s]", str(self.cookie))
-        if response.meta["only_update"]:
-            return self.request_section_abstract_list(self.meta["start"], self.meta["end"])
-        else:
-            return self.register_cookie()
+        return self.register_cookie()
 
     def register_cookie(self):
         """
@@ -112,6 +142,7 @@ class CNKISpider(scrapy.Spider):
         total_page_num = 21
         interval = 10
         start = 1
+        cookie_count = 0
         while start < total_page_num:
             _start = start
             _end = start + interval
@@ -125,28 +156,12 @@ class CNKISpider(scrapy.Spider):
                 meta = {
                     "current_page": i
                 }
-                cookie = copy.deepcopy(self.cookie)
+                cookie = copy.deepcopy(global_constant.cookie_batch[cookie_count])
+                LOGGER.error("Use cookie %s", cookie)
                 for url in urls:
                     yield scrapy.Request(url=url, headers=self.header, cookies=cookie,
                                          callback=self.parse_abstract_list, meta=meta)
-
-    def request_section_abstract_list(self, start, end):
-        """
-        页数区间内cookie不会失效，所以是纯粹的获取概要列表的接口
-        :param start:
-        :param end:
-        :return:
-        """
-        LOGGER.info("Request section [%d, %d)", start, end)
-        for i in range(start, end):
-            urls = [spider_util.build_abstract_list_url(i)]
-            meta = {
-                "current_page": i
-            }
-            cookie = copy.deepcopy(self.cookie)
-            for url in urls:
-                yield scrapy.Request(url=url, headers=self.header, cookies=cookie,
-                                     callback=self.parse_abstract_list, meta=meta)
+            cookie_count += 1
 
     def parse_abstract_list(self, response):
         LOGGER.info("Got abstract list page [%d], and start parse it", response.meta["current_page"])
@@ -161,7 +176,27 @@ class CNKISpider(scrapy.Spider):
 
     def request_paper_detail(self, urls):
         for url in urls:
-            yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=parse_paper_detail)
+            yield scrapy.Request(url=url, headers=self.header, cookies=self.cookie, callback=self.parse_paper_detail)
+
+    def parse_paper_detail(self, response):
+        """
+        step 7: 解析论文详情页面
+        :param response:
+        :return:
+        """
+        (title, authors, organizations) = parse_paper_detail_wxmain(response)
+        (abstract, tutors, catalog, keywords, doi) = parse_paper_detail_wxinfo(response)
+        (download_num, page_num, size) = parse_paper_detail_total(response)
+
+        paper_detail = PaperDetail.new_instance(
+            url=response.request.url, title=title, authors=authors, organizations=organizations, abstract=abstract,
+            tutors=tutors, catalog=catalog, keywords=keywords, doi=doi, page_num=page_num, download_num=download_num,
+            size=size
+        )
+
+        print paper_detail["title"]
+        w_file.write(paper_detail["title"])
+        w_file.write(paper_detail["url"] + "\n")
 
     def test(self):
         return self.request_paper_detail([
@@ -169,25 +204,7 @@ class CNKISpider(scrapy.Spider):
         ])
 
 
-def parse_paper_detail(response):
-    """
-    step 7: 解析论文详情页面
-    :param response:
-    :return:
-    """
-    (title, authors, organizations) = parse_paper_detail_wxmain(response)
-    (abstract, tutors, catalog, keywords, doi) = parse_paper_detail_wxinfo(response)
-    (download_num, page_num, size) = parse_paper_detail_total(response)
 
-    paper_detail = PaperDetail.new_instance(
-        url=response.request.url, title=title, authors=authors, organizations=organizations, abstract=abstract,
-        tutors=tutors, catalog=catalog, keywords=keywords, doi=doi, page_num=page_num, download_num=download_num,
-        size=size
-    )
-
-    # print paper_detail["title"]
-    w_file.write(paper_detail["title"])
-    w_file.write(paper_detail["url"] + "\n")
 
 
 w_file = open("./tmp/output", "w")

@@ -8,7 +8,8 @@ install-scrapy:
 	sudo pip install scrapy
 
 run: init
-	scrapy crawl cnki
+	# scrapy crawl cnki
+	python main.py
 
 init:
 	if [ ! -d "./log" ]; then mkdir ./log; fi
