@@ -38,6 +38,8 @@ handler = logging.handlers.RotatingFileHandler(LOG_PATH, maxBytes=LOG_FILE_SIZE,
 handler.setFormatter(logging.Formatter('%(asctime)s %(filename)s [line:%(lineno)d] %(levelname)s %(message)s', '%a, %d %b %Y %H:%M:%S'))
 logger.addHandler(handler)
 
-cookie_batch_num = 20
-cookie_batch = []
 tag = "A"
+# 每个批的大小
+batch_size = 10
+total_page_num = None
+total_paper_num = None
