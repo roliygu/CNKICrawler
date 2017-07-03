@@ -50,6 +50,15 @@ is_test = False
 test_total_page_num = 20
 
 
+def get_total_paper_num():
+    return total_paper_num
+
+
+def set_total_paper_num(_total_paper_num):
+    global total_paper_num
+    total_paper_num = _total_paper_num
+
+
 def get_total_page_num():
     if is_test:
         return test_total_page_num
