@@ -43,3 +43,5 @@ tag = "A"
 batch_size = 10
 total_page_num = None
 total_paper_num = None
+# 每页概要的详情条数
+page_detail_num = 50

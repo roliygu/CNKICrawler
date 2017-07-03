@@ -20,18 +20,22 @@ class CNKISpider(scrapy.Spider):
     cookie = {}
 
     def start_requests(self):
-        LOGGER.info("Starting")
-        return self.request_cookie()
+        LOGGER.info("Starting CNKISpider")
+        return self.request_single_cookie()
 
-    def request_cookie(self):
+    def request_single_cookie(self):
+        """
+
+        :return:
+        """
         LOGGER.info("Request Cookie")
         request_cookie_urls = [global_constant.default_result_url]
         for url in request_cookie_urls:
             yield scrapy.Request(url=url, method="POST", callback=self.parse_cookie, dont_filter=True)
 
-    def request_batch_cookie(self, batch_num):
-        LOGGER.info("Request Batch Cookie, number is [%d]", batch_num)
-        request_cookie_urls = [global_constant.default_result_url for i in range(batch_num)]
+    def request_batch_cookie(self, batch_seq_no):
+        LOGGER.info("Request Batch Cookie, order is [%d]", batch_seq_no)
+        request_cookie_urls = [global_constant.default_result_url for i in range(batch_seq_no)]
         for i, url in enumerate(request_cookie_urls):
             yield scrapy.Request(url=url, method="POST", callback=self.parse_batch_cookie, dont_filter=True,
                                  meta={"cookiejar": i})
@@ -79,15 +83,15 @@ class CNKISpider(scrapy.Spider):
         LOGGER.info("Got first abstract list page")
         total_paper_num = parse_total_paper_num(response.css("div.pagerTitleCell::text").extract_first())
         global_constant.logger.info("TotalPaperNum is %d", total_paper_num)
-        total_page_num = int(response.css("span.countPageMark::text").extract_first().split("/")[1])
+        # total_page_num = int(response.css("span.countPageMark::text").extract_first().split("/")[1])
+        total_page_num = 200
         global_constant.logger.info("TotalPageNum is %d", total_page_num)
         global_constant.total_paper_num = total_paper_num
         global_constant.total_page_num = total_page_num
         return self.request_all_abstract_list()
 
     def request_all_abstract_list(self):
-        total_page_num = 55
-        global_constant.total_page_num = 55
+        total_page_num = global_constant.total_page_num
         LOGGER.info("Receive total page [%d]", global_constant.total_page_num)
         batch_num = int(math.ceil(total_page_num * 1.0 / global_constant.batch_size))
         return self.request_batch_cookie(batch_num)
@@ -107,6 +111,7 @@ class CNKISpider(scrapy.Spider):
     def parse_abstract_list(self, response):
         LOGGER.info("Got abstract list page [%d], and start parse it", response.meta["current_page"])
         rows = response.css("table.GridTableContent TR")
+        LOGGER.info("Rows number is [%d] in page [%d]", len(rows), response.meta["current_page"])
         if len(rows) == 0:
             LOGGER.error("Rows is empty, page [%d]", response.meta["current_page"])
         detail_urls = []
