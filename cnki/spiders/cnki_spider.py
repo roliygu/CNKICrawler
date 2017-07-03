@@ -1,8 +1,9 @@
 #! usr/bin/python
 # coding=utf-8
 
-import sys
 import math
+import sys
+
 import cnki.spider_utils.util as spider_util
 import global_constant
 from cnki.paper_abstract import *
@@ -20,50 +21,54 @@ class CNKISpider(scrapy.Spider):
     cookie = {}
 
     def start_requests(self):
-        LOGGER.info("Starting CNKISpider")
-        return self.request_single_cookie()
+        LOGGER.info("Starting CNKISpider, and it will request the first cookie")
+        cookie_urls = [global_constant.cookie_url]
+        for url in cookie_urls:
+            yield scrapy.Request(url=url, method="POST", callback=self.register_cookie, dont_filter=True)
 
-    def request_single_cookie(self):
-        """
+    def register_cookie(self, response):
+        LOGGER.info("Request cookie successful")
+        cookie = spider_util.get_cookie(response)
+        LOGGER.info("The cookie [%s] will register; tag is [%s]", str(cookie), global_constant.tag)
+        urls = [spider_util.build_search_url(global_constant.tag)]
+        for url in urls:
+            yield scrapy.Request(url=url, cookies=cookie, callback=self.request_first_abstract_list, dont_filter=True,
+                                 meta={"cookie": cookie})
 
-        :return:
-        """
-        LOGGER.info("Request Cookie")
-        request_cookie_urls = [global_constant.default_result_url]
-        for url in request_cookie_urls:
-            yield scrapy.Request(url=url, method="POST", callback=self.parse_cookie, dont_filter=True)
+    def request_first_abstract_list(self, response):
+        LOGGER.info("Register cookie [%s] successful, and request first abstract list page", response.meta["cookie"])
+        urls = [global_constant.detail_test_url]
+        for url in urls:
+            yield scrapy.Request(url=url, cookies=response.meta["cookie"], callback=self.request_batch_cookie)
 
-    def request_batch_cookie(self, batch_seq_no):
-        LOGGER.info("Request Batch Cookie, order is [%d]", batch_seq_no)
-        request_cookie_urls = [global_constant.default_result_url for i in range(batch_seq_no)]
+    def request_batch_cookie(self, response):
+        LOGGER.info("Request first abstract list page ")
+        total_paper_num = parse_total_paper_num(response.css("div.pagerTitleCell::text").extract_first())
+        LOGGER.info("TotalPaperNum is %d", total_paper_num)
+        total_page_num = int(response.css("span.countPageMark::text").extract_first().split("/")[1])
+        LOGGER.info("TotalPageNum is %d", total_page_num)
+        global_constant.total_paper_num = total_paper_num
+        global_constant.set_total_page_num(total_page_num)
+        total_page_num = global_constant.get_total_page_num()
+        LOGGER.info("Receive total page [%d]", total_page_num)
+        batch_num = int(math.ceil(total_page_num * 1.0 / global_constant.batch_size))
+        LOGGER.info("Request Batch Cookie, number is [%d]", batch_num)
+        request_cookie_urls = [global_constant.cookie_url for i in range(batch_num)]
         for i, url in enumerate(request_cookie_urls):
-            yield scrapy.Request(url=url, method="POST", callback=self.parse_batch_cookie, dont_filter=True,
+            yield scrapy.Request(url=url, method="POST", callback=self.register_batch_cookie, dont_filter=True,
                                  meta={"cookiejar": i})
 
-    def parse_batch_cookie(self, response):
+    def register_batch_cookie(self, response):
         requested_cookie = spider_util.get_cookie(response)
         LOGGER.info("Got Batch Cookie is [%s]", str(requested_cookie))
         urls = [spider_util.build_search_url(global_constant.tag)]
         LOGGER.info("Register cookie [%s] for tag [%s]", str(requested_cookie), global_constant.tag)
         for url in urls:
-            yield scrapy.Request(url=url, cookies=requested_cookie, callback=self.parse_batch_register,
+            yield scrapy.Request(url=url, cookies=requested_cookie, callback=self.request_abstract_list,
                                  dont_filter=True,
                                  meta={"cookie": requested_cookie, "cookiejar": response.meta["cookiejar"]})
 
-    def parse_cookie(self, response):
-        cookie = spider_util.get_cookie(response)
-        LOGGER.info("Got Cookie is [%s]", str(cookie))
-        urls = [spider_util.build_search_url(global_constant.tag)]
-        LOGGER.info("Register cookie [%s] for tag [%s]", str(cookie), global_constant.tag)
-        for url in urls:
-            yield scrapy.Request(url=url, cookies=cookie, callback=self.parse_register, dont_filter=True,
-                                 meta={"cookie": cookie})
-
-    def parse_register(self, response):
-        LOGGER.info("Register cookie [%s] successful", response.meta["cookie"])
-        return self.request_first_abstract_list(response.meta["cookie"])
-
-    def parse_batch_register(self, response):
+    def request_abstract_list(self, response):
         LOGGER.info("Register cookie batch [%d] successful, cookie is [%s]", response.meta["cookiejar"],
                     response.meta["cookie"])
         batch_seq = int(response.meta["cookiejar"])
@@ -71,43 +76,18 @@ class CNKISpider(scrapy.Spider):
         end = start + global_constant.batch_size
         if end > global_constant.get_total_page_num() + 1:
             end = global_constant.get_total_page_num()
-        return self.request_section_abstract_list(start, end, response.meta["cookie"])
-
-    def request_first_abstract_list(self, cookie):
-        LOGGER.info("Request first abstract list page")
-        urls = [global_constant.detail_test_url]
-        for url in urls:
-            yield scrapy.Request(url=url, cookies=cookie, callback=self.parse_first_abstract_list)
-
-    def parse_first_abstract_list(self, response):
-        LOGGER.info("Got first abstract list page")
-        total_paper_num = parse_total_paper_num(response.css("div.pagerTitleCell::text").extract_first())
-        global_constant.logger.info("TotalPaperNum is %d", total_paper_num)
-        total_page_num = int(response.css("span.countPageMark::text").extract_first().split("/")[1])
-        global_constant.logger.info("TotalPageNum is %d", total_page_num)
-        global_constant.total_paper_num = total_paper_num
-        global_constant.set_total_page_num(total_page_num)
-        return self.request_all_abstract_list()
-
-    def request_all_abstract_list(self):
-        total_page_num = global_constant.get_total_page_num()
-        LOGGER.info("Receive total page [%d]", total_page_num)
-        batch_num = int(math.ceil(total_page_num * 1.0 / global_constant.batch_size))
-        return self.request_batch_cookie(batch_num)
-
-    def request_section_abstract_list(self, start, end, cookie):
         LOGGER.info("Request page section [%d, %d)", start, end)
         for i in range(start, end):
             urls = [spider_util.build_abstract_list_url(i)]
             meta = {
                 "current_page": i,
-                "cookie": cookie
+                "cookie": response.meta["cookie"]
             }
             for url in urls:
-                yield scrapy.Request(url=url, cookies=cookie,
-                                     callback=self.parse_abstract_list, meta=meta, dont_filter=True)
+                yield scrapy.Request(url=url, cookies=response.meta["cookie"],
+                                     callback=self.request_paper_details, meta=meta, dont_filter=True)
 
-    def parse_abstract_list(self, response):
+    def request_paper_details(self, response):
         LOGGER.info("Got abstract list page [%d], and start parse it", response.meta["current_page"])
         rows = response.css("table.GridTableContent TR")
         LOGGER.info("Rows number is [%d] in page [%d]", len(rows), response.meta["current_page"])
@@ -117,14 +97,12 @@ class CNKISpider(scrapy.Spider):
         for row in rows[1:]:
             paper_abstract = parse_paper_abstract(row)
             detail_urls.append(global_constant.url_prefix + paper_abstract["title"]["url"])
-            # print global_constant.url_prefix + paper_abstract["title"]["url"]
-        return self.request_paper_detail(detail_urls, response.meta["cookie"])
+        for url in detail_urls:
+            yield scrapy.Request(url=url, callback=self.parse_paper_detail, dont_filter=True,
+                                 cookies=response.meta["cookie"])
 
-    def request_paper_detail(self, urls, cookie):
-        for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse_paper_detail, dont_filter=True, cookies=cookie)
-
-    def parse_paper_detail(self, response):
+    @staticmethod
+    def parse_paper_detail(response):
         (title, authors, organizations) = parse_paper_detail_wxmain(response)
         (abstract, tutors, catalog, keywords, doi) = parse_paper_detail_wxinfo(response)
         (download_num, page_num, size) = parse_paper_detail_total(response)
@@ -138,11 +116,6 @@ class CNKISpider(scrapy.Spider):
         print paper_detail["title"]
         w_file.write(paper_detail["title"] + "\n")
         # w_file.write(paper_detail["url"] + "\n")
-
-    def test(self):
-        return self.request_paper_detail([
-            "http://kns.cnki.net/KCMS/detail/detail.aspx?dbcode=CJFQ&dbname=CAPJLAST&filename=FUHE20160905000&uid=WEEvREcwSlJHSldRa1Fhb09jMjQxYytZYjJOR0h1VzNHVHJjS29sZ0kybz0=$9A4hF_YAuvQ5obgVAqNKPCYcEjKensW4ggI8Fm4gTkoUKaID8j8gFw!!&v=MzEyNjRUM2ZscVdNMENMTDdSN3FlWU9ab0Zpam1Vci9OSlYwPUl6akRhN0c0SDlmTXBvOUFaT3NQWXc5TXptUm42ajU3"
-        ])
 
 
 w_file = open("./tmp/output", "w")

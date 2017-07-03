@@ -8,7 +8,7 @@ __author__ = 'roliy'
 # url
 url_prefix = "http://kns.cnki.net"
 # default_result用来获取cookie
-default_result_url = "http://kns.cnki.net/kns/brief/default_result.aspx"
+cookie_url = "http://kns.cnki.net/kns/brief/default_result.aspx"
 # 用来注册cookie和获取查询首页
 search_handler_url = "http://kns.cnki.net/kns/request/SearchHandler.ashx"
 # 测试是否能获取到详情
@@ -47,7 +47,7 @@ total_paper_num = None
 page_detail_num = 50
 
 is_test = False
-test_total_page_num = 5
+test_total_page_num = 20
 
 
 def get_total_page_num():
