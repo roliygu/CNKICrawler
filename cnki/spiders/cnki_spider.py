@@ -69,8 +69,8 @@ class CNKISpider(scrapy.Spider):
         batch_seq = int(response.meta["cookiejar"])
         start = batch_seq * global_constant.batch_size + 1
         end = start + global_constant.batch_size
-        if end > global_constant.total_page_num + 1:
-            end = global_constant.total_page_num
+        if end > global_constant.get_total_page_num() + 1:
+            end = global_constant.get_total_page_num()
         return self.request_section_abstract_list(start, end, response.meta["cookie"])
 
     def request_first_abstract_list(self, cookie):
@@ -83,16 +83,15 @@ class CNKISpider(scrapy.Spider):
         LOGGER.info("Got first abstract list page")
         total_paper_num = parse_total_paper_num(response.css("div.pagerTitleCell::text").extract_first())
         global_constant.logger.info("TotalPaperNum is %d", total_paper_num)
-        # total_page_num = int(response.css("span.countPageMark::text").extract_first().split("/")[1])
-        total_page_num = 200
+        total_page_num = int(response.css("span.countPageMark::text").extract_first().split("/")[1])
         global_constant.logger.info("TotalPageNum is %d", total_page_num)
         global_constant.total_paper_num = total_paper_num
-        global_constant.total_page_num = total_page_num
+        global_constant.set_total_page_num(total_page_num)
         return self.request_all_abstract_list()
 
     def request_all_abstract_list(self):
-        total_page_num = global_constant.total_page_num
-        LOGGER.info("Receive total page [%d]", global_constant.total_page_num)
+        total_page_num = global_constant.get_total_page_num()
+        LOGGER.info("Receive total page [%d]", total_page_num)
         batch_num = int(math.ceil(total_page_num * 1.0 / global_constant.batch_size))
         return self.request_batch_cookie(batch_num)
 

@@ -45,3 +45,21 @@ total_page_num = None
 total_paper_num = None
 # 每页概要的详情条数
 page_detail_num = 50
+
+is_test = False
+test_total_page_num = 5
+
+
+def get_total_page_num():
+    if is_test:
+        return test_total_page_num
+    else:
+        return total_page_num
+
+
+def set_total_page_num(_total_page_num):
+    if is_test:
+        return
+    else:
+        global total_page_num
+        total_page_num = _total_page_num
