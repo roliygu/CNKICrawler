@@ -12,15 +12,59 @@
 
 1. python27
 2. scrapy
+3. requests
+4. BeautifulSoup4
+
+依赖及其具体版本将由virtual env控制,可以不用关心。
 
 ## 三. 使用方法
 
-0. 第一次使用时,需要初始化`virtual env`,并安装相关依赖。运行`make setup`命令,能帮助你解决所有依赖及版本问题。
-1. `source cnki_spider/bin/activate`命令,attach到`virtual env`中,之后便可以使用make的其他命令
-2. `make test` 测试爬虫
-3. `make run` 如果测试没有出现异常,就可以执行此命令运行爬虫
-4. `make clean` 清理历史log和暂存文件
-5. `deactivate`可以脱离`virtual env`,恢复到本机的python环境
+### 0. pip
+
+请确认已经安装好pip,并能正常使用
+
+### 1. 初始化运行环境
+
+为了避免依赖包版本带来的不兼容问题,本项目使用了`virtual env`来管理Python运行环境。
+```
+# 在项目根目录下
+make setup
+```
+将会下载安装`virtual env`,并在virtualenv中安装本项目所有依赖的python包。
+初始化完成后,以后运行不需要重复初始化。
+
+### 2. 进入virtual env
+
+如果上一步成功后,就能看见`./cnki_spider`目录
+
+```
+# 在项目根目录下
+source cnki_spider/bin/activate
+```
+执行本命令后,当前终端就进入virtual env环境,之后用到的python命令,将自动指向virtual env中的python。
+
+### 3. 运行测试
+
+确保已经在virtual env内,如在终端的主机名前看到`(cnki_spider)`前缀。
+
+```
+# 在项目根目录下
+make test
+```
+
+### 4. 运行爬虫
+
+确保在virtual env内,且之前的测试没有问题。
+```
+# 在项目根目录下
+make run
+```
+
+### 5. 其他命令
+
+介绍一些其他非流程使用的命令
+`make clean`, 将清理log和tmp
+`deactivate`, 脱离当前virtual env,恢复到本机原来的python环境
 
 ## 四. 爬取流程及注意事项
 
