@@ -2,6 +2,5 @@
 
 pip install virtualenv --upgrade
 virtualenv cnki_spider
-cd cnki_spider/
-source bin/activate
+source cnki_spider/bin/activate
 pip install scrapy

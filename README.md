@@ -15,11 +15,12 @@
 
 ## 三. 使用方法
 
-1. 安装依赖,并确保依赖lib能正常使用
-2. `make install-scrapy` 安装scrapy,不过要求已经有pip,如果已经安装过,可忽略此步
-3. `make run` 运行爬虫
-4. `make test` 测试爬虫
+0. 第一次使用时,需要初始化`virtual env`,并安装相关依赖。运行`make setup`命令,能帮助你解决所有依赖及版本问题。
+1. `source cnki_spider/bin/activate`命令,attach到`virtual env`中,之后便可以使用make的其他命令
+2. `make test` 测试爬虫
+3. `make run` 如果测试没有出现异常,就可以执行此命令运行爬虫
 4. `make clean` 清理历史log和暂存文件
+5. `deactivate`可以脱离`virtual env`,恢复到本机的python环境
 
 ## 四. 爬取流程及注意事项
 
