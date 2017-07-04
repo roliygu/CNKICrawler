@@ -1,8 +1,9 @@
 #! usr/bin/python
 # coding=utf-8
 
-import cnki.spiders.global_constant as global_constant
 import requests
+
+import cnki.spiders.global_constant as global_constant
 
 __author__ = 'roliy'
 
@@ -24,6 +25,23 @@ def get_cookie(tag):
     else:
         LOGGER.info("Got cookie %s", str(cookie))
         return cookie
+
+
+def build_abstract_first_list_url_by_year(year):
+    params = {
+        "dest": "分组：发表年度 是 %s" % year,
+        "action": "5",
+        "dbPrefix": "SCDB",
+        "PageName": "ASP.brief_default_result_aspx",
+        "Param": "年 = '%s'" % year,
+        "SortType": "年",
+        "ShowHistory": "1",
+        "DisplayMode": "listmode",
+    }
+    url = global_constant.abstract_list_url + "?"
+    for key, value in params.items():
+        url += key + "=" + value + "&"
+    return url[:-1]
 
 
 def build_abstract_list_url(page_num):

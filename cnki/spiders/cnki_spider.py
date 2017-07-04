@@ -23,9 +23,25 @@ class CNKISpider(scrapy.Spider):
     def start_requests(self):
         LOGGER.info("Starting CNKISpider, and it will request the first cookie")
         cookie = spider_util.get_cookie(global_constant.tag)
-        urls = [global_constant.detail_test_url]
+        return self.request_year_group(cookie)
+
+    def request_first_abstract_list(self, response):
+        years = self.parse_year_group(response)
+        urls = []
+        for year in years:
+            url = spider_util.build_abstract_first_list_url_by_year(year)
+            urls.append(url)
         for url in urls:
-            yield scrapy.Request(url=url, cookies=cookie, callback=self.request_abstract_list)
+            yield scrapy.Request(url=url, cookies=response.meta["cookie"], callback=self.request_abstract_list,
+                                 dont_filter=True)
+
+    def request_year_group(self, cookie):
+        urls = [global_constant.year_group_url]
+        for i, url in enumerate(urls):
+            yield scrapy.Request(url=url, cookies=cookie, callback=self.request_first_abstract_list, meta={
+                "cookie": cookie,
+                "cookiejar": i
+            })
 
     def request_abstract_list(self, response):
         batch_num = self.parse_first_abstract_list(response)
@@ -67,7 +83,12 @@ class CNKISpider(scrapy.Spider):
         global_constant.set_total_paper_num(
             parse_total_paper_num(response.css("div.pagerTitleCell::text").extract_first()))
         LOGGER.info("TotalPaperNum is %d", global_constant.get_total_paper_num())
-        global_constant.set_total_page_num(int(response.css("span.countPageMark::text").extract_first().split("/")[1]))
+        total_page_text = response.css("span.countPageMark::text").extract_first()
+        if total_page_text:  # 页数为1页的时候,html中的总页数缺失
+            global_constant.set_total_page_num(
+                int(total_page_text.split("/")[1]))
+        else:
+            global_constant.set_total_page_num(1)
         LOGGER.info("TotalPageNum is %d", global_constant.get_total_page_num())
         batch_num = int(math.ceil(global_constant.get_total_page_num() * 1.0 / global_constant.batch_size))
         return batch_num
@@ -84,7 +105,6 @@ class CNKISpider(scrapy.Spider):
             size=size
         )
 
-        print paper_detail["title"]
         w_file.write(paper_detail["title"] + "\n")
 
     @staticmethod
@@ -95,6 +115,18 @@ class CNKISpider(scrapy.Spider):
             end = global_constant.get_total_page_num()
         LOGGER.info("Request page section [%d, %d)", start, end)
         return start, end
+
+    @staticmethod
+    def parse_year_group(response):
+        spans = response.css("span")
+        years = []
+        for i in range(len(spans) / 2):
+            year = spans[i * 2].css("span").css("a::text").extract_first()
+            number = int(spans[i * 2 + 1].css("span::text").extract_first().replace("(", "").replace(")", ""))
+            if number > 6000:
+                LOGGER.warn("Year [%s], paper number [%d] over 6000, be careful", year, number)
+            years.append(int(year))
+        return years
 
 
 w_file = open("./tmp/output", "w")
