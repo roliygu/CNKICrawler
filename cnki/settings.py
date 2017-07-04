@@ -46,6 +46,7 @@ DEFAULT_REQUEST_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, sdch",
     "Connection": "keep-alive",
+    "Host": "www.cnki.net"
 }
 
 # Enable or disable spider middlewares

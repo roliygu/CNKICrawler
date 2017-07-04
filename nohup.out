@@ -1,0 +1,66 @@
+if [ ! -d "./log" ]; then mkdir ./log; fi
+if [ ! -d "./tmp" ]; then mkdir ./tmp; fi
+date
+Tue Jul  4 17:51:51 CST 2017
+python main.py
+if [ ! -d "./log" ]; then mkdir ./log; fi
+if [ ! -d "./tmp" ]; then mkdir ./tmp; fi
+date
+Tue Jul  4 17:51:58 CST 2017
+python main.py
+if [ ! -d "./log" ]; then mkdir ./log; fi
+if [ ! -d "./tmp" ]; then mkdir ./tmp; fi
+date
+Tue Jul  4 17:52:00 CST 2017
+python main.py
+if [ ! -d "./log" ]; then mkdir ./log; fi
+if [ ! -d "./tmp" ]; then mkdir ./tmp; fi
+date
+Tue Jul  4 17:52:01 CST 2017
+python main.py
+2017-07-04 17:59:43 [User] ERROR: Rows is empty, page [59]
+2017-07-04 17:59:46 [User] ERROR: Rows is empty, page [57]
+2017-07-04 18:00:24 [scrapy.core.scraper] ERROR: Spider error processing <GET http://kns.cnki.net/KCMS/detail/detail.aspx?dbcode=CJFQ&dbname=CAPJLAST&filename=WLXJ20170602001&v=MDgxNjVXTTBDTEw3UjdxZVlPWm9GaTNsV3I3SkkxOD1NaUhUWkxHNEg5Yk1xWTlIWk9zT1l3OU16bVJuNmo1N1QzZmxx> (referer: http://kns.cnki.net/kns/brief/brief.aspx?turnpage=1&PageName=ASP.brief_default_result_aspx&dbPrefix=SCDB&curpage=67&Fields=&tpagemode=L&RecordsPerPage=50&QueryID=36&DisplayMode=listmode&ID=)
+Traceback (most recent call last):
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki_virtual_env/lib/python2.7/site-packages/twisted/internet/defer.py", line 653, in _runCallbacks
+    current.result = callback(current.result, *args, **kw)
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki/spiders/cnki_spider.py", line 79, in parse_paper_detail
+    (download_num, page_num, size) = parse_paper_detail_total(response)
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki/spiders/cnki_spider.py", line 104, in parse_paper_detail_total
+    download_num = div_total[0]
+IndexError: list index out of range
+2017-07-04 18:00:27 [scrapy.core.scraper] ERROR: Spider error processing <GET http://kns.cnki.net/KCMS/detail/detail.aspx?dbcode=CJFQ&dbname=CAPJLAST&filename=WLXJ20170602001&v=MTUzODduNmo1N1QzZmxxV00wQ0xMN1I3cWVZT1pvRmkzbFdyN0pJMXc9TWlIVFpMRzRIOWJNcVk5SFpPc09ZdzlNem1S> (referer: http://kns.cnki.net/kns/brief/brief.aspx?turnpage=1&PageName=ASP.brief_default_result_aspx&dbPrefix=SCDB&curpage=67&Fields=&tpagemode=L&RecordsPerPage=50&QueryID=36&DisplayMode=listmode&ID=)
+Traceback (most recent call last):
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki_virtual_env/lib/python2.7/site-packages/twisted/internet/defer.py", line 653, in _runCallbacks
+    current.result = callback(current.result, *args, **kw)
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki/spiders/cnki_spider.py", line 79, in parse_paper_detail
+    (download_num, page_num, size) = parse_paper_detail_total(response)
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki/spiders/cnki_spider.py", line 104, in parse_paper_detail_total
+    download_num = div_total[0]
+IndexError: list index out of range
+2017-07-04 18:00:27 [scrapy.core.scraper] ERROR: Spider error processing <GET http://kns.cnki.net/KCMS/detail/detail.aspx?dbcode=CJFQ&dbname=CAPJLAST&filename=WLXJ20170602001&v=MjY1NDVPWm9GaTNsV3I3Skkxcz1NaUhUWkxHNEg5Yk1xWTlIWk9zT1l3OU16bVJuNmo1N1QzZmxxV00wQ0xMN1I3cWVZ> (referer: http://kns.cnki.net/kns/brief/brief.aspx?turnpage=1&PageName=ASP.brief_default_result_aspx&dbPrefix=SCDB&curpage=67&Fields=&tpagemode=L&RecordsPerPage=50&QueryID=36&DisplayMode=listmode&ID=)
+Traceback (most recent call last):
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki_virtual_env/lib/python2.7/site-packages/twisted/internet/defer.py", line 653, in _runCallbacks
+    current.result = callback(current.result, *args, **kw)
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki/spiders/cnki_spider.py", line 79, in parse_paper_detail
+    (download_num, page_num, size) = parse_paper_detail_total(response)
+  File "/Users/roliy/PycharmProjects/CNKICrawler/cnki/spiders/cnki_spider.py", line 104, in parse_paper_detail_total
+    download_num = div_total[0]
+IndexError: list index out of range
+6199 5335
+date
+Tue Jul  4 18:01:29 CST 2017
+6327 5390
+date
+Tue Jul  4 18:01:35 CST 2017
+6363 5389
+date
+Tue Jul  4 18:01:41 CST 2017
+if [ ! -d "./log" ]; then mkdir ./log; fi
+if [ ! -d "./tmp" ]; then mkdir ./tmp; fi
+date
+Tue Jul  4 18:44:57 CST 2017
+python main.py
+13422 985
+date
+Tue Jul  4 18:55:28 CST 2017
