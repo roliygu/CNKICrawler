@@ -4,8 +4,8 @@ clean:
 	rm log/*
 	rm tmp/*
 
-install-scrapy:
-	sudo pip install scrapy
+setup:
+	bash scripts/setup.sh
 
 run: init
 	# scrapy crawl cnki
