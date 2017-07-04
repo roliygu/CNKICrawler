@@ -45,7 +45,7 @@ source cnki_spider/bin/activate
 
 ### 3. 运行测试
 
-确保已经在virtual env内,如在终端的主机名前看到`(cnki_spider)`前缀。
+确保已经在virtual env内,如在终端的主机名前看到`(cnki_virtual_env)`前缀。
 
 ```
 # 在项目根目录下

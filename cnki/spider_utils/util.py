@@ -2,23 +2,28 @@
 # coding=utf-8
 
 import cnki.spiders.global_constant as global_constant
+import requests
 
 __author__ = 'roliy'
 
+LOGGER = global_constant.logger
 
-def get_cookie(response):
-    cookies = response.headers.getlist('Set-Cookie')
-    res = {
-        "SID_kns": None,
-        "ASP.NET_SessionId": None,
+
+def get_cookie(tag):
+    cookie_response = requests.post(global_constant.cookie_url)
+    cookie = {
+        "ASP.NET_SessionId": cookie_response.cookies["ASP.NET_SessionId"],
+        "SID_kns": cookie_response.cookies["SID_kns"],
         "RsPerPage": str(global_constant.page_detail_num)
     }
-    for item in cookies:
-        if item.find("ASP.NET_SessionId") != -1:
-            res["ASP.NET_SessionId"] = item.split("; ")[0].split("=")[1]
-        if item.find("SID_kns") != -1:
-            res["SID_kns"] = item.split("; ")[0].split("=")[1]
-    return res
+    url = build_search_url(tag)
+    register_response = requests.get(url, cookies=cookie)
+    if register_response.status_code != 200:
+        LOGGER.error("Register failure")
+        return None
+    else:
+        LOGGER.info("Got cookie %s", str(cookie))
+        return cookie
 
 
 def build_abstract_list_url(page_num):
@@ -46,11 +51,6 @@ def build_abstract_list_url(page_num):
 
 
 def build_search_url(tag):
-    """
-    封装一个合法的查询url
-    :param tag:
-    :return:
-    """
     params = {
         "action": "",
         "NaviCode": tag,
