@@ -8,8 +8,9 @@ setup:
 	bash scripts/setup.sh
 
 run: init
-	# scrapy crawl cnki
+	date
 	python main.py
+	date
 
 init:
 	if [ ! -d "./log" ]; then mkdir ./log; fi
